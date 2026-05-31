@@ -1,0 +1,22 @@
+{
+  "name": "beaver",
+  "displayName": "Beaver",
+  "description": "Codebase-aware build companion — analyze your codebase, then plan, build, test, commit, and refactor with consistent conventions. Language-agnostic (NestJS, Spring, Python, ...).",
+  "version": "0.1.0",
+  "author": {
+    "name": "HaSungJe",
+    "url": "https://github.com/HaSungJe"
+  },
+  "homepage": "https://github.com/HaSungJe/beaver#readme",
+  "repository": "https://github.com/HaSungJe/beaver",
+  "license": "MIT",
+  "keywords": [
+    "spec-first",
+    "codebase-analysis",
+    "workflow",
+    "scaffolding",
+    "claude-code",
+    "multi-language"
+  ],
+  "hooks": "./hooks/hooks.json"
+}

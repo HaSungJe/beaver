@@ -1,0 +1,28 @@
+{
+  "name": "beaver",
+  "owner": {
+    "name": "HaSungJe",
+    "url": "https://github.com/HaSungJe"
+  },
+  "description": "Beaver — codebase-aware build companion for Claude Code.",
+  "plugins": [
+    {
+      "name": "beaver",
+      "source": "./",
+      "description": "Analyze your codebase into a living convention spec, then plan, build, test, commit, push, resolve conflicts, and refactor — all grounded in that spec. Language-agnostic.",
+      "displayName": "Beaver",
+      "version": "0.1.0",
+      "author": {
+        "name": "HaSungJe"
+      },
+      "homepage": "https://github.com/HaSungJe/beaver#readme",
+      "repository": "https://github.com/HaSungJe/beaver",
+      "license": "MIT",
+      "tags": [
+        "spec-first",
+        "codebase-analysis",
+        "workflow"
+      ]
+    }
+  ]
+}
