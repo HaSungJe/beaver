@@ -17,7 +17,7 @@
 | 충돌 해결 | `/beaver:resolve` | "충돌 해결" (ship 병합 충돌 시 자동) |
 | 리팩토링 | `/beaver:refactor` | "비슷한 기능 묶기", "중복 정리" |
 
-**사이클**: `plan→build`(작은 사이클)를 한 stick 브랜치에 누적(build는 커밋 안 함) → `ship`(큰 사이클)이 커밋·푸쉬·`dam` 병합(충돌 시 resolve 자동).
+**흐름**: `plan`→`build`(기획→구현)를 한 stick 브랜치에 누적(build는 커밋 안 함) → `ship`이 커밋·푸쉬·`dam` 병합(충돌 시 resolve 자동).
 **위치**: 설정 `.beaver/config.json` · 산출물 `.beaver/output/{spec,plan,revision,report,refactor}/` · 메모리 `.beaver/memory/`(인덱스 MEMORY.md, 코드로 알 수 있는 내용은 저장 안 함).
 
 ---

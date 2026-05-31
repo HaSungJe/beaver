@@ -48,7 +48,7 @@ Claude Code 안에서:
 /beaver:analyze
 ```
 
-→ `CLAUDE.md` + `docs/` 규약과 `.beaver/config.json` 이 생성된다. 이후 `/beaver:plan` → `/beaver:build` → `/beaver:ship` 으로 진행. 자세한 흐름은 [README](./README.md#작업-흐름--두-겹의-사이클) 참고.
+→ `CLAUDE.md` + `docs/` 규약과 `.beaver/config.json` 이 생성된다. 이후 `/beaver:plan` → `/beaver:build` → `/beaver:ship` 으로 진행. 자세한 흐름은 [README](./README.md#작업-흐름) 참고.
 
 ---
 
