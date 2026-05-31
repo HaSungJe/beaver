@@ -26,7 +26,7 @@ if (!file) process.exit(0);
 const root = projectRoot();
 const sourceRoot = (cfg.paths && cfg.paths.source_root) || 'src';
 const testGlob = (cfg.paths && cfg.paths.test_glob) || '';
-const MAX_RETRY = cfg.self_heal_retry_limit || 10;
+const MAX_RETRY = cfg.self_heal_retry_limit || 5;
 
 const RETRY_FILE = path.join(BEAVER_DIR(), '.retry-count');
 const SPEC_FILE = path.join(BEAVER_DIR(), '.current-spec');
@@ -50,7 +50,7 @@ let count = 0;
 if (fs.existsSync(RETRY_FILE)) count = parseInt(fs.readFileSync(RETRY_FILE, 'utf-8'), 10) || 0;
 
 if (count >= MAX_RETRY) {
-  out(`[beaver] STOP: 최대 재시도 횟수(${MAX_RETRY}회) 초과 — 사람 검토가 필요합니다.`);
+  out(`[beaver] STOP: ${MAX_RETRY}회 자가수복 실패 — 추측 수정 중단. 근본원인 격리 후 plan 단계로 돌아가 접근을 재검토하세요 (build 막힘 fallback).`);
   cleanup();
   process.exit(1);
 }
