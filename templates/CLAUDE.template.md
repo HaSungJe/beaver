@@ -18,7 +18,7 @@
 | 리팩토링 | `/beaver:refactor` | "비슷한 기능 묶기", "중복 정리" |
 
 **흐름**: `plan`→`build`(기획→구현)를 한 stick 브랜치에 누적(build는 커밋 안 함) → `ship`이 커밋·코드리뷰·푸쉬·`dam` 병합(충돌 시 resolve 자동).
-**위치**: 설정 `.beaver/config.json` · 산출물 `.beaver/output/{spec,plan,revision,report,refactor}/` · 메모리 `.beaver/memory/`(인덱스 MEMORY.md, 코드로 알 수 있는 내용은 저장 안 함).
+**위치**: 설정 `.beaver/config.json` · 산출물 `.beaver/output/{spec,plan,revision,report,review,refactor}/` (spec/plan/revision/report는 `<domain>/` 하위, review는 stick 단위 flat, refactor는 주제 단위 flat) · 메모리 `.beaver/memory/`(인덱스 MEMORY.md, 코드로 알 수 있는 내용은 저장 안 함).
 
 ---
 

@@ -106,7 +106,7 @@ beaver/
 │   ├── architecture-mapper.md  convention-scout.md  test-pattern-analyzer.md
 ├── hooks/hooks.json         # PostToolUse — 검증 + 자가수복
 ├── scripts/                 # Node 스크립트 (검증기·self-heal)
-└── templates/               # CLAUDE / spec / plan / revision / report / refactor-plan 양식
+└── templates/               # CLAUDE / spec / plan / revision / report / review / refactor-plan 양식
 ```
 
 ## License
