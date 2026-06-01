@@ -2,7 +2,7 @@
   "name": "beaver",
   "displayName": "Beaver",
   "description": "Codebase-aware build companion — analyze your codebase, then plan, build, test, commit, and refactor with consistent conventions. Language-agnostic (NestJS, Spring, Python, ...).",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "author": {
     "name": "HaSungJe",
     "url": "https://github.com/HaSungJe"
