@@ -7,8 +7,10 @@ description: 누적된 stick 작업을 커밋하고 로컬 통합 브랜치(dam)
 
 plan→build로 stick에 쌓은 누적분을 한 번에 배포한다.
 
-## 0. 전제
-완료 작업(report) 또는 변경분이 있어야 함. 없으면 중단.
+## 0. 전제 + memory
+진입 시 `.beaver/memory/`(MEMORY.md + 토픽)를 먼저 읽어 커밋 분리·리뷰에 **최우선** 적용한다(memory > CLAUDE.md > 기본). 완료 작업(report) 또는 변경분이 있어야 함. 없으면 중단.
+
+> ship은 **전체 회귀(`commands.test`)를 직접 돌리지 않는다** — 충돌 해결(resolve) 경로에서만 부수적으로 실행되고, 누적 전체 회귀는 원격 발행 직전(release §3)에 1회 수행한다. build는 그 기능 `test_one`만 보므로 ship 시점엔 기능별 통과만 보장된 상태다.
 
 ## 1. 커밋
 `git status`/`diff` 확인 → 여러 기능이면 논리 단위로 커밋 분리 제안(`.beaver/output/plan|report` 경계 근거) → 메시지 자동 생성(`git log` 스타일 확인) → 스테이징+메시지 **승인 후** 커밋.
