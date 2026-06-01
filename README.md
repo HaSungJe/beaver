@@ -9,6 +9,7 @@
 - **회귀 방지** — 문서 구조 검증 + 테스트 자가수복(기본 5회, 막히면 plan으로 되먹임) + 병합 충돌 자동 해결.
 - **다언어 지원** — 스택을 감지해 테스트·빌드 커맨드를 설정에 기록하므로 언어에 비종속.
 - **검수 지점 확보** — spec→plan 게이트와 승인 기반 커밋·푸쉬로 매 단계 사람이 확인한다.
+- **규칙 누적(memory)** — 작업 중 사용자 지적을 `.beaver/memory/` 에 누적해 이후 작업서 **최우선** 적용. 같은 지적을 반복하지 않는다.
 
 ---
 
@@ -63,16 +64,27 @@ refactor       # 독립 · 필요 시 (계획서 → 실행, 동작 보존)
 
 > **브랜치 모델**: 작업 브랜치 `stick/<domain>-<rand6>` 에 작업을 누적하고, ship이 통합 브랜치 `dam` 에 병합한다. 이름·접두사는 `.beaver/config.json` 의 `branch.integration`(기본 `dam`)·`branch.stick_prefix`(기본 `stick`)로 변경 가능.
 
-- **`analyze`** (독립) — 프로젝트당 한 번. 기존 코드가 있으면 그 코드에서 규약을 추출하고, 신규/빈 프로젝트면 감지한 프레임워크(Nest/Spring 등)의 표준·권장 구조를 채택해 규약 문서를 만든다.
+- **`analyze`** (독립) — 프로젝트당 한 번. 기존 코드가 있으면 그 코드에서 규약을 추출하고, 신규/빈 프로젝트면 감지한 프레임워크(Nest/Spring 등)의 표준·권장 구조를 채택해 규약 문서를 만든다. 섹션별 "담을 것/깊이" 가이드 템플릿 + `docs/` 스킬레톤으로 채우며, **용례 0건 자산은 시그니처만 직독(호출 예시 날조 금지)·미적용 인프라는 정직 표기**한다.
 - **`plan` → `build`** (세트) — 한 stick 브랜치에서 기능마다 반복. plan은 명세(spec→plan)를 정리한다 — spec 단계에서 기능명만 줘도 **기존 DB·연관 기능·재사용 패턴을 스캔해 "이런 것도 있으면 좋다"를 제안**하고 사용자가 검증한다. build는 **테스트를 먼저 쓰고(TDD, plan의 테스트 케이스 → red) 구현으로 green**을 만든 뒤 자가수복까지 하되, **커밋하지 않고** 변경을 쌓아둔다.
 - **`ship` ↔ `resolve`** (세트) — 누적분을 커밋 → **코드 리뷰**(CLAUDE.md 규약 대비 + 의도 동작 확인) → 푸쉬 → `dam` 병합(모든 단계 승인 기반). 병합 충돌 시 `resolve` 가 ship 안에서 자동으로 통합한다.
 - **`refactor`** (독립) — 필요할 때. 계획서를 쓰고 승인 후 실행하며 테스트로 동작을 보존한다.
+
+### 사용자 규칙 메모리 (`.beaver/memory/`)
+
+작업 중 사용자가 규약을 교정하거나 선호를 표명하면("service 말고 repository에서만 UK/FK 핸들링" 등), 모든 단계가 이를 기억하고 우선 적용한다.
+
+- **저장(확인 후)** — 지속 규칙으로 판단되면 "memory에 저장할까?" 확인 → `.beaver/memory/<topic>.md` 에 누적. 일회성 지시나 코드로 알 수 있는 사실은 저장 안 함.
+- **우선순위** — `memory > CLAUDE.md > 프레임워크 기본`. 충돌하면 memory가 이긴다. plan·build·refactor·resolve 진입 시 먼저 읽는다.
+- **정식 반영(reconcile)** — ship 코드 리뷰 / analyze 재생성 시, 아직 규약 문서에 없는 memory 규칙을 `CLAUDE.md`/`docs/` 에 반영할지 제안한다. 코드외 순수 선호는 memory에만 영속.
+
+> 규칙: `${plugin}/templates/memory-protocol.md` (저장소 구조 · 엔트리 포맷 · capture/read/reconcile).
 
 ### 안전장치
 
 - **파일 존재 기반 전제** — 각 단계는 이전 산출물이 있어야 진입한다. 없으면 무엇이 부족한지 안내하고 중단.
 - **자동 검증 hook** — plan/spec 문서 저장 시 구조 검증, 구현/테스트 파일 저장 시 테스트 자동 실행·자가수복(Node 필요, `.beaver/config.json` 의 커맨드 사용).
 - **승인 게이트** — 커밋·푸쉬·충돌 해결은 항상 사용자 확인 후에만 실행.
+- **규칙 메모리** — `.beaver/memory/` 의 사용자 규칙이 `CLAUDE.md` 보다 우선(위 참고).
 
 ---
 
@@ -106,8 +118,14 @@ beaver/
 │   ├── architecture-mapper.md  convention-scout.md  test-pattern-analyzer.md
 ├── hooks/hooks.json         # PostToolUse — 검증 + 자가수복
 ├── scripts/                 # Node 스크립트 (검증기·self-heal)
-└── templates/               # CLAUDE / spec / plan / revision / report / review / refactor-plan 양식
+└── templates/               # 규약·산출물 양식
+    ├── CLAUDE.template.md    #   섹션별 가이드 규약 템플릿
+    ├── docs/                 #   규약 분리 문서 스킬레톤 (architecture/conventions/data-layer/error-handling/api/testing)
+    ├── memory-protocol.md    #   사용자 규칙 memory 프로토콜
+    └── spec / plan / revision / report / review / refactor-plan 양식
 ```
+
+> 런타임 산출물은 사용자 프로젝트의 `.beaver/` 아래 생성된다: `config.json` · `output/{spec,plan,revision,report,review,refactor}/` · `memory/`(사용자 규칙).
 
 ## License
 
