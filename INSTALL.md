@@ -54,19 +54,46 @@ Claude Code 안에서:
 
 ## 업데이트
 
-저장소에 새 버전이 올라오면:
+저장소에 새 버전이 올라오면 아래 **3단계**로 갱신한다. 순서가 중요하다 — 마켓플레이스 메타를 먼저 새로고침해야 새 버전이 인식된다.
+
+### 1단계 — 마켓플레이스 메타 새로고침
+
+Claude Code 입력창에 그대로 입력:
 
 ```text
 /plugin marketplace update beaver
-/plugin update beaver
 ```
 
-1. `marketplace update beaver` — 마켓플레이스 메타데이터를 다시 가져온다.
-2. `update beaver` — 플러그인을 최신 버전으로 갱신.
+→ `✔ Updated 1 marketplace (1 plugin bumped)` 가 뜨면 새 버전 번호를 인식한 것. (`bumped` 가 안 떠도, 버전이 그대로면 갱신할 게 없다는 뜻.)
 
-또는 `/plugin` UI의 **Manage** 탭에서 업데이트 알림이 뜨면 거기서 갱신한다.
+### 2단계 — 플러그인 갱신 (UI)
 
-> hook 경로는 플러그인 캐시에 고정되므로, 업데이트 후 hook이 옛 버전을 가리키면 `/reload-plugins` (또는 Claude Code 재시작) 로 새로고침한다.
+`/plugin update beaver` 는 Claude Code 버전에 따라 **그냥 UI만 열릴 수** 있다. 확실한 방법은 `/plugin` UI에서 직접 누르는 것:
+
+1. 입력창에 `/plugin` 입력 → Enter. 플러그인 매니저가 열린다.
+2. 상단 탭을 **`Installed`** 로 이동 — `←` `→` 화살표로 탭 전환 (`Plugins  Discover  Installed  Marketplaces  Errors`).
+3. `↑` `↓` 로 목록에서 **`beaver`** 선택. 새 버전이 있으면 오른쪽에 `[UPDATE]` 배지가 보인다.
+4. `Enter` → 상세 화면에서 **`Update`** 항목 선택 후 `Enter`.
+5. `beaver is already at the latest version (x.y.z).` 가 뜨면 갱신 완료.
+
+> `[UPDATE]` 배지가 안 보이고 버전이 그대로면 → `Esc` 로 나가 **1단계를 다시** 한 뒤 2단계 재시도.
+
+### 3단계 — 반영 (필수)
+
+```text
+/reload-plugins
+```
+
+→ `Reloaded: N plugins …` 가 뜨면 새 skill/hook/template 이 적용된다. (또는 Claude Code 재시작.)
+
+**확인**: `/reload-plugins` 출력 끝에 `0 error` 면 정상. `1 error during load` 가 뜨면 아래 트러블슈팅 참고.
+
+### 갱신이 안 잡힐 때 (stale 캐시)
+
+업데이트 후에도 옛 버전이 동작하거나 hook 에러가 남으면 캐시에 옛 버전이 고정된 것:
+
+- `/plugin` → `Installed` → `beaver` 에서 **Disable → Enable** (비활성화 후 재활성화) → `/reload-plugins`.
+- 그래도 남으면 **Claude Code 재시작**. 캐시는 `~/.claude/plugins/cache/beaver/beaver/<version>/` 에 버전별로 쌓이므로, 재시작하면 최신 버전 디렉터리로 로드된다.
 
 ### 프로젝트 산출물은 보존된다
 
@@ -118,4 +145,6 @@ claude --plugin-dir /path/to/beaver
 | hook이 안 도는데 검증/자가수복이 안 됨 | `node` 가 PATH에 있는지 (`node -v`). 없으면 hook은 no-op — skill의 수동 테스트 흐름으로 대체 |
 | `/beaver:plan` 이 "규약 문서 없음" 으로 중단 | `/beaver:analyze` 를 먼저 1회 실행해 `CLAUDE.md` 생성 |
 | 테스트 커맨드가 틀림 | `.beaver/config.json` 의 `commands.test` / `test_one` 을 프로젝트에 맞게 수정 |
-| 업데이트가 반영 안 됨 | `/plugin marketplace update beaver` 후 `/reload-plugins` |
+| 업데이트가 반영 안 됨 | 1) `/plugin marketplace update beaver` 2) `/plugin` → `Installed` → beaver → `Update` 3) `/reload-plugins` (위 [업데이트](#업데이트) 3단계). 그래도면 Disable→Enable 또는 재시작 |
+| `Duplicate hooks file detected` 에러 | 옛 버전(≤0.1.3) 캐시 잔재. 최신으로 업데이트 후 `/reload-plugins`, 안 되면 재시작해 옛 버전 캐시 디렉터리 해제 |
+| `1 error during load` | `/doctor` 로 상세 확인. 대개 위 hooks 중복 또는 stale 캐시 — 재시작으로 해소 |
