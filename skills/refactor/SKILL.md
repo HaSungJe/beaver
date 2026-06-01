@@ -15,7 +15,7 @@ description: 코드를 리팩토링한다(비슷한 기능 묶기, 중복 제거
 지정 범위가 있으면 그 안에서, 없으면 스캔(Grep/Read): 중복/유사 로직 / CLAUDE.md 기준상 util·module로 빠져야 할 오배치 / 묶을 기능 군집. 각 발견은 근거(경로:라인) 포함.
 
 ## 2. 계획서 작성
-`templates/refactor-plan.md` 기반 `.beaver/output/refactor/<name>-refactor-<YYMMDD>.md`: 목표/범위, baseline, 발견 목록, 변경 방안, 작은 단위 실행 순서, 영향 파일, 테스트 전략, 리스크.
+`${CLAUDE_PLUGIN_ROOT}/templates/refactor-plan.md` 기반 `.beaver/output/refactor/<name>-refactor-<YYMMDD>.md`: 목표/범위, baseline, 발견 목록, 변경 방안, 작은 단위 실행 순서, 영향 파일, 테스트 전략, 리스크.
 
 ## 3. 조정·승인
 계획서 제시 → 우선순위·범위 조정. 너무 넓게 가지 않는다. **승인 전 코드 수정 금지.**

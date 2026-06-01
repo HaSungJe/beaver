@@ -4,7 +4,7 @@
 // When a spec/test file is saved -> run the project's single-test command for it.
 // While a retry is in progress and an implementation file is saved -> re-run.
 // On failure, increment .beaver/.retry-count and surface the error so Claude fixes it.
-// On unit pass, run the full suite for regression. Resets state when done.
+// On unit pass, mark the feature done; full regression is deferred to release. Resets state.
 //
 // No-ops silently unless .beaver/config.json exists and the changed file looks like
 // source/test under the configured source_root. Requires Node on PATH.

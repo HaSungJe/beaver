@@ -10,3 +10,4 @@ Thumbs.db
 .beaver/.retry-count
 .beaver/.current-spec
 .beaver/.auto-branch-state.json
+.beaver/.dam-state.json

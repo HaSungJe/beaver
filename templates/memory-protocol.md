@@ -1,6 +1,6 @@
 # Beaver Memory 프로토콜
 
-작업 중 사용자가 지적·교정한 **지속 규칙(선호·오버라이드)** 을 `.beaver/memory/` 에 누적하고, 이후 모든 단계가 이를 **최우선**으로 따른다. 모든 skill(analyze/plan/build/refactor/resolve/ship)이 이 프로토콜을 공유한다.
+작업 중 사용자가 지적·교정한 **지속 규칙(선호·오버라이드)** 을 `.beaver/memory/` 에 누적하고, 이후 모든 단계가 이를 **최우선**으로 따른다. 모든 skill(analyze/plan/build/refactor/resolve/ship/release)이 이 프로토콜을 공유한다.
 
 ## 저장소 구조
 
@@ -55,7 +55,7 @@
 
 ## Reconcile (정식 반영)
 
-- **ship** 코드리뷰 단계, **analyze** 재생성 시: `CLAUDE.md 반영: 미반영` 엔트리를 훑어 CLAUDE.md/docs 정식 반영을 제안.
+- **ship**·**release** 코드리뷰 단계, **analyze** 재생성 시: `CLAUDE.md 반영: 미반영` 엔트리를 훑어 CLAUDE.md/docs 정식 반영을 제안.
   - 반영 승인 → 해당 섹션 수정 후 엔트리를 `반영됨(<섹션>)` 으로 갱신.
   - 코드외 순수 선호 → `불필요`로 두고 memory에 영속(반영 안 함).
 - 목표: memory는 "아직 규약 문서에 안 들어간 사용자 결정"의 버퍼이자, 코드외 선호의 영속 저장소.

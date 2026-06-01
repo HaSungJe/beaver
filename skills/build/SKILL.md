@@ -37,7 +37,7 @@ self-heal이 같은 실패로 한도(기본 5회)를 소진하면 **build를 성
 전제: 구현이 막히면 계획·접근이 틀렸을 수 있다 — 막힘을 사람 호출로 끝내지 않고 기획으로 되먹인다.
 
 ## 4. 리포트
-`templates/report.md` 기반:
+`${CLAUDE_PLUGIN_ROOT}/templates/report.md` 기반:
 - 신규 → `.beaver/output/report/<domain>/<feature>-report.md` 생성.
 - 변경 → 기존 report 끝에 `## 수정 - <YYMMDD>-<N>` 추기.
 

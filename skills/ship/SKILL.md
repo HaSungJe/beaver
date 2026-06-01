@@ -19,7 +19,7 @@ stick의 누적 변경분(base 대비 diff)을 **`.beaver/memory/` 규칙 + `CLA
 - **memory 반영(reconcile)** — `.beaver/memory/`에서 `CLAUDE.md 반영: 미반영` 엔트리를 훑어 CLAUDE.md/docs 정식 반영을 제안. 승인 시 해당 섹션 수정 + 엔트리를 `반영됨`으로 갱신(코드외 순수 선호는 `불필요`로 두고 memory 영속). 프로토콜 `${CLAUDE_PLUGIN_ROOT}/templates/memory-protocol.md`.
 - **의도 동작 확인** — plan/spec 의도대로 구현됐는지(누락·오구현 없는지). 테스트 통과만으로 끝내지 않는다.
 - **draft 규약 확정** — plan §4.5가 만든 draft 규약 문서(`<!-- beaver:draft ... -->` 마커)가 있으면 **실제 코드와 일치하는지 검증** 후 마커 제거·확정한다. 불일치면 문서를 코드에 맞춰 고친 뒤 확정. dam 병합으로 비로소 정식 규약이 된다.
-- `templates/review.md` 기반 **`.beaver/output/review/<stick>-review-<YYMMDD>.md`** 작성. `<stick>`은 브랜치명의 `/`→`-`(예: `stick/user-a3f9c2`→`stick-user-a3f9c2`), 도메인 무관·ship 단위 1개. 같은 날 재리뷰면 `-<N>`.
+- `${CLAUDE_PLUGIN_ROOT}/templates/review.md` 기반 **`.beaver/output/review/<stick>-review-<YYMMDD>.md`** 작성. `<stick>`은 브랜치명의 `/`→`-`(예: `stick/user-a3f9c2`→`stick-user-a3f9c2`), 도메인 무관·ship 단위 1개. 같은 날 재리뷰면 `-<N>`.
 - 발견 항목을 심각도와 함께 보고 → 사용자 판단: 수정 필요하면 `/beaver:build`로 고친 뒤 재시도, 통과면 병합 진행. **승인 없이 병합으로 넘어가지 않는다.**
 
 ## 3. 병합
@@ -31,11 +31,11 @@ stick의 누적 변경분(base 대비 diff)을 **`.beaver/memory/` 규칙 + `CLA
 3. `git merge <stick>` — **충돌 시 §충돌 해결 자동 수행**.
 4. `git branch -d <stick>` + state 키 제거. — stick도 로컬 전용이라 원격 push/삭제 없음.
 
-*stick·dam 모두 로컬 전용 — ship은 원격에 push하지 않는다(원격 발행은 `/beaver:release`가 dam→소스에서만).
+*stick·dam 모두 로컬 전용 — ship은 원격에 push하지 않는다(원격 발행은 `/beaver:release`가 dam→소스에서만 한다).
 
 *dam 보장: dam은 `/beaver:plan`이 소스 브랜치에서 만든다(로컬 전용). ship 진입 시 로컬 dam이 없으면 중단하고 plan 안내 — ship은 dam을 원격에서 받거나 새로 만들지 않는다.
 
-**일반 모드** — 대상이 `dam`이면 로컬 병합만 하고 **push하지 않는다**(dam 로컬 전용). dam 외 원격 브랜치가 대상이면 확인 후 `git push`. 통합 병합이 필요하면 위 3~5 동일. (dam→소스 반영·dam 삭제는 `/beaver:release`.)
+**일반 모드** — 대상이 `dam`이면 로컬 병합만 하고 **push하지 않는다**(dam 로컬 전용). dam 외 원격 브랜치가 대상이면 확인 후 `git push`. 통합 병합이 필요하면 위 2~3(체크아웃 → 병합) 동일. (dam→소스 반영·dam 삭제는 `/beaver:release`.)
 
 ### 충돌 해결 (병합 충돌 시 자동)
 [resolve](../resolve/SKILL.md) 절차를 ship 안에서 수행: ours/theirs 의도 파악 → `CLAUDE.md` 규약대로 통합 → 마커 정리(`git diff --check`) → 테스트 → 사용자 승인 → 머지 커밋. 위험하면 `git merge --abort` 제시.

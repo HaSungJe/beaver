@@ -20,7 +20,7 @@
 | 분석(1회) | `/beaver:analyze` | "코드베이스 분석" |
 | 기획 | `/beaver:plan <기능명>` | "<기능명> 기획", "기능 생성/수정" |
 | 구현 | `/beaver:build` | "작업 시작", "구현" |
-| 배포 | `/beaver:ship` | "커밋하고 푸쉬", "dam 병합" |
+| 배포 | `/beaver:ship` | "커밋하고 dam 병합", "작업 마무리" |
 | 충돌 해결 | `/beaver:resolve` | "충돌 해결" (ship 병합 충돌 시 자동) |
 | 방류 | `/beaver:release` | "dam 방류", "메인에 반영" |
 | 리팩토링 | `/beaver:refactor` | "비슷한 기능 묶기", "중복 정리" |
