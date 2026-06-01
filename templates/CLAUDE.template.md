@@ -22,9 +22,10 @@
 | 구현 | `/beaver:build` | "작업 시작", "구현" |
 | 배포 | `/beaver:ship` | "커밋하고 푸쉬", "dam 병합" |
 | 충돌 해결 | `/beaver:resolve` | "충돌 해결" (ship 병합 충돌 시 자동) |
+| 방류 | `/beaver:release` | "dam 방류", "메인에 반영" |
 | 리팩토링 | `/beaver:refactor` | "비슷한 기능 묶기", "중복 정리" |
 
-**흐름**: `plan`→`build`(기획→구현)를 한 stick 브랜치에 누적(build는 커밋 안 함) → `ship`이 커밋·코드리뷰·푸쉬·`dam` 병합(충돌 시 resolve 자동).
+**흐름**: 선택 소스 브랜치에서 복제한 `dam`(로컬 전용)에서 `stick`을 뻗어 `plan`→`build`(기획→구현)를 누적(build는 커밋 안 함) → `ship`이 커밋·코드리뷰·stick 푸쉬·`dam` 로컬 병합(충돌 시 resolve 자동) → `release`가 dam을 소스 브랜치로 병합·푸쉬하고 로컬 dam 삭제. dam은 원격에 push하지 않는다.
 **위치**: 설정 `.beaver/config.json` · 산출물 `.beaver/output/{spec,plan,revision,report,review,refactor}/` (spec/plan/revision/report는 `<domain>/` 하위, review는 stick 단위 flat, refactor는 주제 단위 flat) · 메모리 `.beaver/memory/`(인덱스 MEMORY.md, 코드로 알 수 있는 내용은 저장 안 함).
 **우선순위**: `.beaver/memory/` 의 사용자 규칙이 이 문서(CLAUDE.md)보다 **우선**한다. 작업 중 사용자 지적은 확인 후 memory에 누적되고, 필요 시 이 문서에도 반영된다(충돌 시 memory가 이김).
 
