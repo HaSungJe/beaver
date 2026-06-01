@@ -1,9 +1,9 @@
 ---
 name: ship
-description: 누적된 stick 작업을 커밋·푸쉬하고 통합 브랜치(dam)에 병합한다. "커밋하고 푸쉬", "dam에 병합", "작업 마무리", "배포", "ship" 요청에 발동. 모든 단계 승인 후 실행.
+description: 누적된 stick 작업을 커밋하고 로컬 통합 브랜치(dam)에 병합한다. "커밋하고 dam에 병합", "작업 마무리", "배포", "ship" 요청에 발동. 모든 단계 승인 후 실행.
 ---
 
-# ship — 커밋 + 푸쉬 + dam 병합
+# ship — 커밋 + dam 로컬 병합
 
 plan→build로 stick에 쌓은 누적분을 한 번에 배포한다.
 
@@ -21,15 +21,16 @@ stick의 누적 변경분(base 대비 diff)을 **`.beaver/memory/` 규칙 + `CLA
 - `templates/review.md` 기반 **`.beaver/output/review/<stick>-review-<YYMMDD>.md`** 작성. `<stick>`은 브랜치명의 `/`→`-`(예: `stick/user-a3f9c2`→`stick-user-a3f9c2`), 도메인 무관·ship 단위 1개. 같은 날 재리뷰면 `-<N>`.
 - 발견 항목을 심각도와 함께 보고 → 사용자 판단: 수정 필요하면 `/beaver:build`로 고친 뒤 재시도, 통과면 병합 진행. **승인 없이 병합으로 넘어가지 않는다.**
 
-## 3. 푸쉬 & 병합
+## 3. 병합
 현재 브랜치가 `.beaver/.auto-branch-state.json` 키인지로 모드 판별.
 
 **자동 브랜치 모드** — base = state lookup(= `dam`, 로컬 전용). 전체 계획 승인 후 순서대로:
 1. stick 커밋(§1)
-2. `git push -u origin <stick>` — stick은 백업·공유용으로 푸쉬.
-3. base(dam) 체크아웃 — 로컬 전용이므로 `pull`/`push` 안 함.
-4. `git merge <stick>` — **충돌 시 §충돌 해결 자동 수행**.
-5. `git branch -d <stick>`(원격도 지울지 확인) + state 키 제거.
+2. base(dam) 체크아웃 — 로컬 전용이므로 `pull`/`push` 안 함.
+3. `git merge <stick>` — **충돌 시 §충돌 해결 자동 수행**.
+4. `git branch -d <stick>` + state 키 제거. — stick도 로컬 전용이라 원격 push/삭제 없음.
+
+*stick·dam 모두 로컬 전용 — ship은 원격에 push하지 않는다(원격 발행은 `/beaver:release`가 dam→소스에서만).
 
 *dam 보장: dam은 `/beaver:plan`이 소스 브랜치에서 만든다(로컬 전용). ship 진입 시 로컬 dam이 없으면 중단하고 plan 안내 — ship은 dam을 원격에서 받거나 새로 만들지 않는다.
 
@@ -39,7 +40,7 @@ stick의 누적 변경분(base 대비 diff)을 **`.beaver/memory/` 규칙 + `CLA
 [resolve](../resolve/SKILL.md) 절차를 ship 안에서 수행: ours/theirs 의도 파악 → `CLAUDE.md` 규약대로 통합 → 마커 정리(`git diff --check`) → 테스트 → 사용자 승인 → 머지 커밋. 위험하면 `git merge --abort` 제시.
 
 ## 4. 보고
-커밋·리뷰·푸쉬·병합 결과. 다음 작업은 `/beaver:plan`.
+커밋·리뷰·병합 결과. 다음 작업은 `/beaver:plan`.
 
 ## 주의
 승인 없이 실행 금지. `--no-verify`·force push는 명시 요청 시만(영향 고지).
