@@ -14,6 +14,10 @@ Claude Code 플러그인 허브를 통해 설치한다. 설치 후 별도 빌드
 
 > 대상 프로젝트의 언어(NestJS/Spring/Python/…)와 무관하게 동작한다. 테스트·빌드 커맨드는 `/beaver:analyze` 가 감지해 `.beaver/config.json` 에 기록한다.
 
+### ⚠️ 동작·보안 고지
+
+beaver의 PostToolUse hook(`scripts/self-heal.js`)은 코드/테스트 파일을 저장할 때 **`.beaver/config.json` 의 `commands.test_one` 에 적힌 셸 명령을 실행**한다(예: `npm test -- ...`, `pytest -k ...`). 즉 **이 hook은 당신이 설정한 프로젝트 테스트 커맨드를 자동으로 실행**한다. `commands` 값은 `/beaver:analyze` 가 감지해 채우며 **항상 사용자 확인 후 기록**되고, `.beaver/config.json` 에서 직접 수정·검토할 수 있다. 신뢰하지 않는 커맨드를 넣지 말 것. Node가 없으면 hook은 아무것도 실행하지 않는다(no-op).
+
 ---
 
 ## 설치

@@ -9,9 +9,9 @@
     {
       "name": "beaver",
       "source": "./",
-      "description": "Analyze your codebase into a living convention spec, then plan, build, test, commit, push, resolve conflicts, and refactor — all grounded in that spec. Language-agnostic.",
+      "description": "Analyze your codebase into a living convention spec, then plan, build with TDD, ship, and release — with automatic merge-conflict resolution and convention-guided refactoring, all grounded in that spec. Language-agnostic.",
       "displayName": "Beaver",
-      "version": "0.1.8",
+      "version": "0.1.9",
       "author": {
         "name": "HaSungJe"
       },

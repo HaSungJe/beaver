@@ -70,18 +70,7 @@ if (unit.code !== 0) {
     : `[beaver] 마지막 시도입니다. 수정 후 저장하면 다시 실행됩니다.`);
   process.exit(1);
 }
-out('[beaver] ✅ 단위 테스트 통과');
-
-if (cfg.commands.test) {
-  out('[beaver] 전체 회귀 테스트 실행...');
-  const full = run(cfg.commands.test);
-  if (full.code !== 0) {
-    out(`[beaver] ❌ 회귀 테스트 실패 — 기존 코드 영향 발생. 사람 검토 필요.\n\n${full.output}`);
-    cleanup();
-    process.exit(1);
-  }
-  out('[beaver] ✅ 전체 회귀 테스트 통과 — 구현 완료');
-}
+out('[beaver] ✅ 단위 테스트 통과 — 이 기능 구현 완료 (전체 회귀는 release에서)');
 cleanup();
 process.exit(0);
 
