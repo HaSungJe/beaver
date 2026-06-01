@@ -7,7 +7,8 @@ description: 코드를 리팩토링한다(비슷한 기능 묶기, 중복 제거
 
 동작을 바꾸지 않고 구조를 개선한다. 계획서 작성 → 조정·승인 → 실행(단계별 테스트). 분리 기준은 `CLAUDE.md` 규약.
 
-## 0. green baseline
+## 0. memory + green baseline
+**memory 먼저 읽기**: `.beaver/memory/`(MEMORY.md + 관련 토픽)를 읽어 분리·배치 판단에 **최우선** 적용(memory > CLAUDE.md). 작업 중 지속 규칙 지적 시 확인 후 저장 — 프로토콜 `${CLAUDE_PLUGIN_ROOT}/templates/memory-protocol.md`.
 `commands.test` 1회로 통과 상태 확인. 깨져 있으면 회귀 판별 불가임을 알린다.
 
 ## 1. 대상 식별

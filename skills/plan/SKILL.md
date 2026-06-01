@@ -8,6 +8,7 @@ description: 기능을 기획해 문서(spec → plan, 변경이면 revision)를
 ## 0. 전제
 - `CLAUDE.md` 필요. 없으면 중단하고 `/beaver:analyze` 안내.
 - `.beaver/config.json`에서 경로·`branch` 설정을 읽는다.
+- **memory 먼저 읽기**: `.beaver/memory/`(MEMORY.md + 관련 토픽)를 읽어 기획에 **최우선** 반영(memory > CLAUDE.md). 기획 중 사용자가 지속 규칙을 지적하면 확인 후 저장 — 프로토콜 `${CLAUDE_PLUGIN_ROOT}/templates/memory-protocol.md`.
 
 ## 1. 모드 판별
 대상 기능명으로:

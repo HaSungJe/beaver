@@ -8,6 +8,7 @@ description: 병합/리베이스 충돌을 해결한다. 충돌 양쪽 의도를
 발동: ① `/beaver:ship`의 dam 병합 충돌 시 자동. ② 그 밖의 충돌(수동 rebase/pull/cherry-pick)은 직접 호출.
 
 ## 절차
+0. **memory 먼저 읽기**: `.beaver/memory/`(MEMORY.md + 관련 토픽)를 읽어 통합 판단에 **최우선** 적용(memory > CLAUDE.md). 프로토콜 `${CLAUDE_PLUGIN_ROOT}/templates/memory-protocol.md`.
 1. `git status`로 충돌 파일·현재 작업(merge/rebase/cherry-pick) 확인. 각 파일 마커 구간에서 ours/theirs 의도 파악(필요시 양쪽 로그).
 2. 해결안:
    - 한쪽이 명백히 상위 → 채택.
