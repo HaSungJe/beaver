@@ -121,7 +121,7 @@ refactor       # 독립 · 필요 시 (계획서 → 실행, 동작 보존)
   - **의도 동작 확인** — 누락·오구현 점검
   - **draft 규약 확정** — `<!-- beaver:draft -->` 문서가 코드와 일치하는지 검증 후 마커 제거·확정
   - 결과를 `templates/review.md`로 `.beaver/output/review/<stick>-review-<YYMMDD>.md`에 기록 → 발견 항목 보고 → "수정 필요"면 build로, "통과"면 병합(승인 없이 병합 금지).
-- **③ 병합** — base(=dam, 로컬 전용)를 체크아웃 → `git merge <stick>`(pull/push 없음) → `git branch -d <stick>` + state 키 제거. **충돌 시 resolve 절차 자동 수행.**
+- **③ 병합** — **base(dam)를 체크아웃하지 않는다**(stick이 새 스키마면 dam 체크아웃이 DB 자동싱크로 컬럼 데이터를 날릴 수 있음). stick 위에 선 채 `git merge dam`(보통 no-op/FF, pull/push 없음) → `git branch -f dam stick`로 dam ref 전진 → `git checkout dam`(트리 무변동→싱크 안 터짐) → `git branch -d <stick>` + state 키 제거. **충돌 시 resolve 절차 자동 수행.**
 - **원격 push 없음** — stick·dam 모두 로컬 전용. 로컬 dam이 없으면 중단하고 plan 안내. 원격 발행은 release만.
 - 전체 회귀(`commands.test`)는 ship이 직접 돌리지 않는다(충돌 해결 경로에서만 부수적).
 
@@ -139,9 +139,9 @@ refactor       # 독립 · 필요 시 (계획서 → 실행, 동작 보존)
 - **전제** — 로컬 dam 존재 + 대상 브랜치 대비 변경분 존재(없으면 중단).
 - **① 전체 코드 리뷰** — dam 누적 diff를 memory·CLAUDE.md·의도 대비 리뷰(ship과 동일 강도) + memory reconcile, 결과를 `.beaver/output/review/dam-release-<YYMMDD>.md`에 기록 → 승인 게이트.
 - **② 대상 브랜치 선택** — `.beaver/.dam-state.json`의 source를 기본값으로(없으면 감지된 mainline), `git branch -a` 목록과 함께 변경 허용. 대상이 dam 자신이면 거부.
-- **③ 병합 + 전체 회귀** — 대상 체크아웃(없으면 `git checkout -b <대상> origin/<대상>`) → `git pull` → `git merge dam`(충돌 시 resolve 자동) → **전체 회귀 `commands.test` 실행, green이어야 진행**(red면 중단·build 수정 후 재시도, 깨진 채 발행 금지). build가 기능별 `test_one`만 보므로 **누적 전체 회귀를 여기서 처음 일괄 검증**한다.
-- **④ 푸쉬** — **대상 브랜치만** `git push`(첫 푸쉬 `-u`). dam은 절대 push 안 함.
-- **⑤ dam 삭제** — `git branch -d dam`(병합됐으니 안전 삭제) + `.beaver/.dam-state.json` 제거(다음 plan이 소스를 다시 묻도록).
+- **③ 병합 + 전체 회귀** — **대상을 체크아웃하지 않는다**(옛 스키마 체크아웃이 DB 자동싱크를 유발해 컬럼 데이터를 날릴 수 있음). dam 위에 선 채 `git fetch origin <대상>` → `git merge origin/<대상>`(대상 신규 커밋을 dam으로, 충돌 시 resolve 자동) → **전체 회귀 `commands.test`를 dam에서 실행, green이어야 진행**(red면 중단·build 수정 후 재시도, 깨진 채 발행 금지). build가 기능별 `test_one`만 보므로 **누적 전체 회귀를 여기서 처음 일괄 검증**한다.
+- **④ 푸쉬** — `git push origin dam:<대상>`(FF, 대상 체크아웃 0회; 첫 발행 `-u`). dam은 자기 이름으론 절대 push 안 함.
+- **⑤ dam 삭제** — `git checkout -B <대상> dam`(트리 무변동→싱크 안 터짐)으로 dam에서 벗어난 뒤 `git branch -d dam`(병합됐으니 안전 삭제) + `.beaver/.dam-state.json` 제거(다음 plan이 소스를 다시 묻도록).
 
 ### ♻️ `/beaver:refactor` — 계획 기반 구조 정리 (독립)
 

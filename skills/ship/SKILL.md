@@ -27,17 +27,21 @@ stick의 누적 변경분(base 대비 diff)을 **`.beaver/memory/` 규칙 + `CLA
 ## 3. 병합
 현재 브랜치가 `.beaver/.auto-branch-state.json` 키인지로 모드 판별.
 
-**자동 브랜치 모드** — base = state lookup(= `dam`, 로컬 전용). 전체 계획 승인 후 순서대로:
-1. stick 커밋(§1)
-2. base(dam) 체크아웃 — 로컬 전용이므로 `pull`/`push` 안 함.
-3. `git merge <stick>` — **충돌 시 §충돌 해결 자동 수행**.
+**자동 브랜치 모드** — base = state lookup(= `dam`, 로컬 전용). **base(dam)를 체크아웃하지 않는다** — stick이 dam보다 새 스키마면 dam 체크아웃이 DB 자동싱크를 유발해 컬럼 데이터를 날릴 수 있음(release §3과 동일 이유). stick(최신 스키마) 위에 선 채로 dam을 끌어와 병합 후 dam ref를 전진시킨다. 전체 계획 승인 후 순서대로:
+1. stick 커밋(§1) — stick에 선 상태.
+2. `git merge dam` — dam을 **stick으로** 병합(보통 dam이 stick 조상이라 no-op/FF). dam이 그새 전진했으면 실병합 — **충돌 시 §충돌 해결 자동 수행**(stick 워킹트리=최신 스키마). 로컬 전용이라 `pull`/`push` 안 함.
+3. `git branch -f dam stick` — dam ref를 stick으로 전진(체크아웃 없이) → `git checkout dam`(트리가 stick과 동일 → 워킹트리 무변동 → DB 싱크 안 터짐).
 4. `git branch -d <stick>` + state 키 제거. — stick도 로컬 전용이라 원격 push/삭제 없음.
 
 *stick·dam 모두 로컬 전용 — ship은 원격에 push하지 않는다(원격 발행은 `/beaver:release`가 dam→소스에서만 한다).
 
 *dam 보장: dam은 `/beaver:plan`이 소스 브랜치에서 만든다(로컬 전용). ship 진입 시 로컬 dam이 없으면 중단하고 plan 안내 — ship은 dam을 원격에서 받거나 새로 만들지 않는다.
 
-**일반 모드** — 대상이 `dam`이면 로컬 병합만 하고 **push하지 않는다**(dam 로컬 전용). dam 외 원격 브랜치가 대상이면 확인 후 `git push`. 통합 병합이 필요하면 위 2~3(체크아웃 → 병합) 동일. (dam→소스 반영·dam 삭제는 `/beaver:release`.)
+**일반 모드** — 대상이 `dam`이면 로컬 병합만 하고 **push하지 않는다**(dam 로컬 전용). dam 외 원격 브랜치가 대상이면 확인 후 push하되 **대상을 체크아웃하지 않는다**(옛 스키마 체크아웃이 DB 자동싱크를 유발해 컬럼 데이터를 날릴 수 있음 — release §3과 동일 이유):
+1. 현재(작업) 브랜치에 선 채로 `git fetch origin <대상>`.
+2. `git merge origin/<대상>` — 대상 신규 커밋을 현재 브랜치로 병합. 충돌 시 §충돌 해결 자동 수행(현재 워킹트리=최신 스키마).
+3. `git push origin HEAD:<대상>` — FF push, 대상 로컬 체크아웃 0회.
+(dam→소스 반영·dam 삭제는 `/beaver:release`.)
 
 ### 충돌 해결 (병합 충돌 시 자동)
 [resolve](../resolve/SKILL.md) 절차를 ship 안에서 수행: ours/theirs 의도 파악 → `CLAUDE.md` 규약대로 통합 → 마커 정리(`git diff --check`) → 테스트 → 사용자 승인 → 머지 커밋. 위험하면 `git merge --abort` 제시.
