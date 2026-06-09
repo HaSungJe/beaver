@@ -1,31 +1,31 @@
-<!-- Beaver docs 스킬레톤 — analyze 가 채운다. API 문서 도구(OpenAPI/Swagger) 없으면 이 파일과 본문 링크 삭제. -->
+<!-- Beaver docs skeleton — filled in by analyze. If there is no API documentation tool (OpenAPI/Swagger), delete this file and the link to it in the body. -->
 
 # API & Docs
 
-## 문서 데코레이터 / 어노테이션 순서
+## Documentation Decorator / Annotation Order
 
-<!-- OpenAPI/Swagger 응답·바디 데코레이터의 표준 순서. 반환 가능한 모든 에러 코드 정의 의무. -->
+<!-- Standard order of OpenAPI/Swagger response/body decorators. Mandatory to define every error code that can be returned. -->
 ```
 ```
 
-## import / 공통 응답 타입
+## Imports / Common Response Types
 
-<!-- 문서화에 쓰는 공통 성공/실패 응답 DTO 와 import 경로. -->
+<!-- Common success/failure response DTOs used for documentation and their import paths. -->
 
-## 메서드 주석(JSDoc/Javadoc)
+## Method Comments (JSDoc/Javadoc)
 
-<!-- 어느 레이어 메서드에 주석 필수인지, 형식. -->
+<!-- Which layer's methods require comments, and the format. -->
 ```
 ```
 
-## DTO 구성 / 네이밍
+## DTO Structure / Naming
 
-<!-- 기능당 DTO 파일 1개, 클래스명 충돌 방지 공식, suffix 역할(Query/Param/Item/Result 등). -->
+<!-- One DTO file per feature, the convention for avoiding class-name collisions, and the role of each suffix (Query/Param/Item/Result, etc.). -->
 
-| suffix | 용도 | 예시 |
+| suffix | purpose | example |
 |---|---|---|
 |  |  |  |
 
-## 공통 헤더
+## Common Headers
 
-<!-- 다국어 헤더 등 모든 API 에 붙는 공통 헤더 규칙. 없으면 삭제. -->
+<!-- Common header rules applied to all APIs, such as localization headers. Delete if none. -->

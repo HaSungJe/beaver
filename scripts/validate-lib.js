@@ -4,8 +4,8 @@
 // under validation.required_plan_sections / required_spec_sections.
 const fs = require('fs');
 
-const DEFAULT_REQUIRED_PLAN = ['## 파일 목록', '## 테스트 케이스'];
-const DEFAULT_REQUIRED_SPEC = ['## 기능 설명', '## API'];
+const DEFAULT_REQUIRED_PLAN = ['## File List', '## Test Cases'];
+const DEFAULT_REQUIRED_SPEC = ['## Feature Description', '## API'];
 
 function hasSection(content, heading) {
   // Match heading allowing English/Korean variants loosely: exact prefix on a line.
@@ -19,7 +19,7 @@ function checkUnanswered(content) {
   let inDecisions = false;
   const open = [];
   for (const line of lines) {
-    if (/^##\s/.test(line)) inDecisions = /(확정\s*설계\s*결정사항|design decisions?|결정사항)/i.test(line);
+    if (/^##\s/.test(line)) inDecisions = /(확정\s*설계\s*결정사항|결정사항|decisions?)/i.test(line);
     if (inDecisions && /^\s*-\s*\[\s\]/.test(line)) open.push(line.trim());
   }
   return open;

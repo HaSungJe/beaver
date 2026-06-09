@@ -1,32 +1,32 @@
-<!-- Beaver docs 스킬레톤 — analyze 가 채운다. 근거 경로 표기. -->
+<!-- Beaver docs skeleton — filled in by analyze. Cite source paths. -->
 
 # Error Handling
 
-## 기본 원칙
+## Basic Principles
 
-<!-- 예외 타입·계층, throw/catch 위치 정책, 응답 메시지 출처(i18n/상수), 1줄 throw 규칙 등. -->
+<!-- Exception types/hierarchy, throw/catch location policy, source of response messages (i18n/constants), one-line throw rule, etc. -->
 
-## Repository(데이터 계층) throw 패턴
+## Repository (Data Layer) throw Pattern
 
-<!-- 통일 문구 사용 이유(범용 메서드는 맥락별 의미가 달라짐 등). DB 에러코드 매핑(중복/FK 위반)을 제약마다 분기. -->
+<!-- Reason for using unified wording (generic methods carry different meanings per context, etc.). Branch DB error code mapping (duplicate/FK violation) per constraint. -->
 ```
 ```
 
-## Service(비즈니스 계층) throw 패턴
+## Service (Business Layer) throw Pattern
 
-<!-- 단순 메시지 vs validationErrors 포함. 예시. -->
+<!-- Simple message vs. including validationErrors. Examples. -->
 ```
 ```
 
-## validationErrors 포함 기준
+## Criteria for Including validationErrors
 
-<!-- 사용자 입력 필드 오류만 포함 / 비즈니스·서버 내부값 오류는 제외 등. 표로. -->
+<!-- Include only user input field errors / exclude business or server-internal value errors, etc. As a table. -->
 
-| 케이스 | validationErrors |
+| Case | validationErrors |
 |---|---|
-| 입력 필드 값 오류 | ✅ |
-| 비즈니스 규칙·서버 내부값 오류 | ❌ |
+| Input field value error | ✅ |
+| Business rule / server-internal value error | ❌ |
 
-## 응답 래퍼 / 상태코드
+## Response Wrapper / Status Codes
 
-<!-- 통일 성공/실패 응답 형태, 상태코드 정책(void→204 등). -->
+<!-- Unified success/failure response shape, status code policy (void→204, etc.). -->

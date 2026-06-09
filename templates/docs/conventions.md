@@ -1,23 +1,23 @@
-<!-- Beaver docs 스킬레톤 — analyze 가 채운다. 안 쓰는 하위 섹션 삭제. 근거 경로 표기. -->
+<!-- Beaver docs skeleton — analyze fills this in. Delete unused subsections. Note source paths. -->
 
 # Conventions
 
 ## Naming
 
-<!-- 엔티티/모델 · DTO · util · 파일 · 클래스 명명 규칙. 충돌 안 나는 명명 공식을 예시로. -->
+<!-- Naming rules for entities/models, DTOs, utils, files, classes. Provide naming formulas that avoid collisions as examples. -->
 
-| 대상 | 규칙 | 예시 |
+| Target | Rule | Example |
 |---|---|---|
 |  |  |  |
 
-## 파일 / 디렉터리
+## Files / Directories
 
-<!-- 파일명 규칙(<domain>-<feature>.xxx 등), 기능당 파일 1개 등 응집 규칙. -->
+<!-- File naming rules (e.g. <domain>-<feature>.xxx), cohesion rules such as one file per feature. -->
 
-## 라우트
+## Routes
 
-<!-- API 경로 규칙(버전 prefix, 슬래시 규칙), path/query param 표기(snake/camel) 전 레이어 통일. -->
+<!-- API path rules (version prefix, trailing-slash rules), path/query param notation (snake/camel) unified across all layers. -->
 
-## 핸들러 입력 파라미터
+## Handler Input Parameters
 
-<!-- 컨트롤러/핸들러 입력은 DTO 타입으로 수신(any 금지), 파라미터 한 줄 등. 예시 1개. -->
+<!-- Controller/handler input is received as DTO types (no `any`), one parameter per line, etc. Include one example. -->

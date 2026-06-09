@@ -1,45 +1,45 @@
-<!-- Beaver docs 스킬레톤 — analyze 가 채운다. 안 쓰는 하위 섹션 삭제. 근거 경로 또는 (표준: <프레임워크>) 표기. -->
+<!-- Beaver docs skeleton — filled in by analyze. Delete unused subsections. Cite source paths or note (standard: <framework>). -->
 
 # Architecture
 
-<!-- 스택 한 줄: 프레임워크 + 버전 + 핵심 의존성 (ORM/DB, 인증, API 문서 등) -->
+<!-- One-line stack: framework + version + core dependencies (ORM/DB, auth, API docs, etc.) -->
 
 ## Directory Layout
 
-<!-- 디렉터리 트리 + 각 디렉터리 역할 주석. 어느 디렉터리에 controller 가 있고/없고, 인프라 vs 도메인 vs 공통 구분. -->
+<!-- Directory tree + comments on each directory's role. Which directories have/lack controllers, and the infra vs. domain vs. shared distinction. -->
 ```
 src/
 └── ...
 ```
 
-## 레이어 경계
+## Layer Boundaries
 
-<!-- 호출 방향 규칙: controller → service → repository 등. 각 레이어가 가질 수 있는/없는 책임. -->
+<!-- Call-direction rules: controller → service → repository, etc. Responsibilities each layer may/may not hold. -->
 
-## 새 도메인(모듈) 최소 파일 구조
+## Minimal File Structure for a New Domain (Module)
 
-<!-- 새 기능 단위를 만들 때 생성할 표준 파일 목록. -->
+<!-- Standard list of files to create when adding a new feature unit. -->
 ```
 <domain>/
 └── ...
 ```
 
-## 새 도메인 추가 절차
+## Procedure for Adding a New Domain
 
-<!-- 1) 표준 구조 생성 2) 모듈/라우터 등록 3) DI 바인딩 ... 단계로. -->
+<!-- As steps: 1) create the standard structure 2) register the module/router 3) bind DI ... -->
 
 ## Key Patterns
 
-<!-- 스택 고유 관용 패턴을 예시 코드로. 없는 항목은 삭제. -->
+<!-- Stack-specific idiomatic patterns shown as example code. Delete items that don't apply. -->
 
-### DI / 의존성 주입
-<!-- 주입 토큰 방식, provider 등록 위치 -->
+### DI / Dependency Injection
+<!-- Injection-token approach, where providers are registered -->
 
 ### Transaction
-<!-- 트랜잭션 경계 선언 방식 -->
+<!-- How transaction boundaries are declared -->
 
 ### Scheduler / Background
-<!-- 스케줄러 등록 규칙, 중복 등록 금지 등 -->
+<!-- Scheduler registration rules, no duplicate registration, etc. -->
 
 ### Import Alias
-<!-- 경로 별칭 매핑 (예: @root/ → src/) -->
+<!-- Path alias mapping (e.g., @root/ → src/) -->

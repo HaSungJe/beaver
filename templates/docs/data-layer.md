@@ -1,40 +1,40 @@
-<!-- Beaver docs 스킬레톤 — analyze 가 채운다. ORM/DB 없으면 이 파일과 본문 링크 삭제.
-     엔티티/repository 가 무거우면 entity.md / repository.md 로 더 쪼개도 됨(샘플 참고). -->
+<!-- Beaver docs skeleton — filled in by analyze. If there's no ORM/DB, delete this file and its links from the main docs.
+     If entities/repositories are heavy, feel free to split further into entity.md / repository.md (see samples). -->
 
 # Data Layer
 
-## Entity / Model 규칙
+## Entity / Model Rules
 
-<!-- 제약 명명 표준(PK/UK/IDX/FK), 컬럼 옵션 규칙, 타임스탬프 처리, 관계(FK) 선언 방식. -->
+<!-- Constraint naming standard (PK/UK/IDX/FK), column option rules, timestamp handling, relationship (FK) declaration style. -->
 
-### 제약 이름 표준
+### Constraint Naming Standard
 | Type | Pattern | Example |
 |---|---|---|
 | PK |  |  |
 | UK |  |  |
 | FK |  |  |
 
-### Entity 템플릿
+### Entity Template
 ```
-// 대표 엔티티 1개를 규약대로 작성한 템플릿
-```
-
-## Repository / DAO 규칙
-
-<!-- 범용 메서드 우선(CRUD 통일), where 조건 조립 위치(서비스 vs repository), 타입 규칙, try/catch 의무. -->
-
-### 메서드 템플릿
-```
+// A template with one representative entity written per the conventions
 ```
 
-## Pagination / 목록 조회 패턴
+## Repository / DAO Rules
 
-<!-- 목록 조회 표준 패턴(단일 메서드로 total/count/list 처리 등). 단계별로. -->
+<!-- Prefer generic methods (unified CRUD), where the where-clause is assembled (service vs repository), type rules, mandatory try/catch. -->
 
-## 조회 DTO 생성자 규칙
+### Method Template
+```
+```
 
-<!-- query 파라미터 타입 변환·기본값 처리 위치, 생성자 시그니처 규칙. -->
+## Pagination / List Query Pattern
+
+<!-- Standard list query pattern (e.g., handling total/count/list in a single method). Step by step. -->
+
+## Query DTO Constructor Rules
+
+<!-- Where query parameter type conversion and default value handling happens, constructor signature rules. -->
 
 ## Transaction
 
-<!-- 트랜잭션 경계와 적용 방식 (Architecture 와 중복되면 한쪽만). -->
+<!-- Transaction boundaries and how they're applied (if this overlaps with Architecture, keep it in only one place). -->

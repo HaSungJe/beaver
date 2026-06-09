@@ -4,7 +4,7 @@
 // When a spec/test file is saved -> run the project's single-test command for it.
 // While a retry is in progress and an implementation file is saved -> re-run.
 // On failure, increment .beaver/.retry-count and surface the error so Claude fixes it.
-// On unit pass, mark the feature done; full regression is deferred to ship. Resets state.
+// On unit pass, reset retry/spec state (feature treated as implemented); full regression is deferred to ship.
 //
 // No-ops silently unless .beaver/config.json exists and the changed file looks like
 // source/test under the configured source_root. Requires Node on PATH.
@@ -50,7 +50,7 @@ let count = 0;
 if (fs.existsSync(RETRY_FILE)) count = parseInt(fs.readFileSync(RETRY_FILE, 'utf-8'), 10) || 0;
 
 if (count >= MAX_RETRY) {
-  out(`[beaver] STOP: ${MAX_RETRY}회 자가수복 실패 — 추측 수정 중단. 근본원인 격리 후 plan 단계로 돌아가 접근을 재검토하세요 (build 막힘 fallback).`);
+  out(`[beaver] STOP: ${MAX_RETRY}회 자가수복 실패 — 추측 수정 중단. 근본 원인을 격리한 뒤 plan 단계로 돌아가 접근을 재검토하세요.`);
   cleanup();
   process.exit(1);
 }

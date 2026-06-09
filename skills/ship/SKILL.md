@@ -1,54 +1,52 @@
 ---
 name: ship
-description: stick worktree에 누적한 작업을 커밋하고 원래 작업 브랜치로 병합·푸쉬한 뒤 worktree를 파기한다. "커밋하고 배포", "작업 마무리", "배포", "ship" 요청에 발동. 모든 단계 승인 후 실행.
+description: Commits the work accumulated in the stick worktree, merges and pushes it into the original work branch, then destroys the worktree. Triggers on "커밋하고 배포", "작업 마무리", "배포", "ship", "commit and deploy", "finish work", "deploy" requests. Runs only after every step is approved.
 ---
 
-# ship — 커밋 + 원래 브랜치 병합·푸쉬 + worktree 파기
+# ship — commit + merge/push into original branch + destroy worktree
 
-plan→build로 stick worktree에 쌓은 누적분을 원래 작업 브랜치(plan 시점의 main/develop 등)로 한 번에 배포한다.
+Ships, in one pass, the accumulation built up in the stick worktree through plan→build into the original work branch (the main/develop etc. that existed at plan time).
 
-## 0. 전제 + memory
-진입 시 `.beaver/memory/`(MEMORY.md + 토픽)를 먼저 읽어 커밋 분리·리뷰에 **최우선** 적용한다(memory > CLAUDE.md > 기본). 완료 작업(report) 또는 변경분이 있어야 함. 없으면 중단. stick worktree 안에서 동작한다(`.beaver/.auto-branch-state.json`에 현재 stick 키가 있어야 함).
+## 0. Preconditions + memory
+On entry, read `.beaver/memory/` (MEMORY.md + topics) first and apply it with **top priority** to commit separation and review (memory > CLAUDE.md > defaults). There must be completed work (a report) or pending changes. Stop if there is none. Operates inside the stick worktree (`.beaver/.auto-branch-state.json` must hold the current stick key).
 
-## 1. 커밋
-`git status`/`diff` 확인 → 여러 기능이면 논리 단위로 커밋 분리 제안(`.beaver/output/plan|report` 경계 근거) → 메시지 자동 생성(`git log` 스타일 확인) → 스테이징+메시지 **승인 후** 커밋.
+## 1. Commit
+Check `git status`/`diff` → if multiple features, propose splitting commits into logical units (using the `.beaver/output/plan|report` boundaries as evidence) → auto-generate the message (check `git log` style) → stage + commit **after approval** of the message.
 
-## 2. 코드 리뷰 (병합 전)
-stick의 누적 변경분(base 대비 diff)을 **`.beaver/memory/` 규칙 + `CLAUDE.md` 규약·plan/spec 의도 대비 자가 리뷰**하고 결과를 문서로 남긴다:
-- 규약 위반 점검 — memory 규칙(최우선) → 네이밍·구조·공통 로직 분리·에러처리·응답·테스트 강도.
-- **memory 반영(reconcile)** — `.beaver/memory/`에서 `CLAUDE.md 반영: 미반영` 엔트리를 훑어 CLAUDE.md/docs 정식 반영을 제안. 승인 시 해당 섹션 수정 + 엔트리를 `반영됨`으로 갱신(코드외 순수 선호는 `불필요`로 두고 memory 영속). 프로토콜 `${CLAUDE_PLUGIN_ROOT}/templates/memory-protocol.md`.
-- **의도 동작 확인** — plan/spec 의도대로 구현됐는지(누락·오구현 없는지). 테스트 통과만으로 끝내지 않는다.
-- **draft 규약 확정** — plan §4.5가 만든 draft 규약 문서(`<!-- beaver:draft ... -->` 마커)가 있으면 **실제 코드와 일치하는지 검증** 후 마커 제거·확정한다. 불일치면 문서를 코드에 맞춰 고친 뒤 확정. 병합으로 비로소 정식 규약이 된다.
-- `${CLAUDE_PLUGIN_ROOT}/templates/review.md` 기반 **`.beaver/output/review/<stick>-review-<YYMMDD>.md`** 작성. `<stick>`은 브랜치명의 `/`→`-`(예: `stick/user-a3f9c2`→`stick-user-a3f9c2`), 도메인 무관·ship 단위 1개. 같은 날 재리뷰면 `-<N>`.
-- 발견 항목을 심각도와 함께 보고 → 사용자 판단: 수정 필요하면 `/beaver:build`로 고친 뒤 재시도, 통과면 병합 진행. **승인 없이 병합으로 넘어가지 않는다.**
+## 2. Code Review (before merge)
+Self-review the stick's accumulated changes (diff against base) **against `.beaver/memory/` rules + the `CLAUDE.md` conventions and the plan/spec intent**, and record the result in a document:
+- Convention compliance check — memory rules (top priority) → naming, structure, common-logic extraction, error handling, responses, test strength.
+- **memory reconcile** — scan `.beaver/memory/` for entries marked `CLAUDE.md 반영: 미반영` (unapplied) and propose formally applying them to CLAUDE.md/docs. On approval, edit the relevant section + update the entry to `반영됨` (applied) (pure non-code preferences stay `불필요` (not needed) and persist in memory). Protocol: `${CLAUDE_PLUGIN_ROOT}/templates/memory-protocol.md`.
+- **Intended-behavior check** — confirm the implementation matches the plan/spec intent (nothing missing or wrongly implemented). Do not consider it done just because tests pass.
+- **Finalize draft conventions** — if a draft convention document created by plan §4.5 exists (`<!-- beaver:draft ... -->` marker), **verify it matches the actual code**, then remove the marker and finalize. If it does not match, fix the document to match the code, then finalize. It only becomes a formal convention upon merge.
+- Write **`.beaver/output/review/<stick>-review-<YYMMDD>.md`** based on `${CLAUDE_PLUGIN_ROOT}/templates/review.md`. `<stick>` replaces `/` in the branch name with `-` (e.g., `stick/user-a3f9c2` → `stick-user-a3f9c2`); domain-agnostic, one per ship. For a re-review on the same day, use `-<N>`.
+- Report findings with their severity → user decides: if fixes are needed, fix via `/beaver:build` and retry; if it passes, proceed to merge. **Do not move on to merge without approval.**
 
-## 2.5 전체 회귀 (병합 전)
-원래 브랜치로 병합하기 전 stick worktree에서 `commands.test` **전체**를 1회 실행한다. build는 기능별 `test_one`만 보므로, 누적 기능 전체의 회귀를 여기서 처음 검증한다. **green이어야 §3 진행.** 실패 시 중단하고 원인 수정(`/beaver:build`) 후 재시도 — 깨진 채로 병합·push하지 않는다.
+## 2.5 Full Regression (before merge)
+Before merging into the original branch, run the **entire** `commands.test` suite once in the stick worktree. Since build only looks at each feature's `test_one`, this is the first verification of regression across all accumulated features. **Must be green to proceed to §3.** On failure, stop, fix the cause (`/beaver:build`), and retry — do not merge/push while broken.
 
-## 3. 복귀 + 전진 병합 + push + 파기
-`.beaver/.auto-branch-state.json`에서 현재 stick의 `origin_branch`를 읽는다. 키가 없으면 중단(plan으로 만든 stick worktree에서만 동작).
+## 3. Return + forward merge + push + destroy
+Proceed **only after §1 commit, §2 code review, and §2.5 full regression are all complete**. `origin_branch` = the value mapped to the current stick key in `.beaver/.auto-branch-state.json` (= the original work branch name).
 
-stick worktree는 항상 최신 스키마이고 원래 브랜치로 **전진** 병합만 하므로, 옛 스키마 체크아웃에 의한 DB 자동싱크 위험이 없다. 전체 계획 승인 후 순서대로:
+Since the stick worktree is always on the latest schema and only **forward** merges into the original branch, there is no risk of DB auto-sync from checking out an old schema. After approval of the full plan, in order:
 
-1. **커밋**(§1) — stick worktree 안에서.
-2. **전체 회귀** — `commands.test` 전체 실행(§2.5). green이어야 진행.
-3. **`ExitWorktree`** — 세션 cwd가 원래 repo 디렉터리(`origin_branch`)로 복귀. worktree·stick 브랜치 ref는 남는다.
-4. **전진 병합** — 복귀한 디렉터리에서:
-   - 원격 추적 있으면 `git fetch origin <origin_branch>` → `git merge origin/<origin_branch>` 로 대상 최신을 현재 브랜치에 편입(충돌 시 §충돌 해결 인라인 수행).
-   - `git merge <stick>` 으로 stick을 현재 브랜치에 전진 병합(충돌 시 §충돌 해결 인라인 수행).
-5. **push** — `git push origin <origin_branch>`. 원격 추적 첫 발행이면 `-u`.
-6. **파기** — `git worktree remove .claude/worktrees/<stick>` → `git branch -d <stick>` → state에서 키 제거.
+1. **`ExitWorktree`** — the session cwd returns to the original repo directory (`origin_branch`). The worktree and stick branch refs remain.
+2. **Forward merge** — in the returned directory:
+   - If remote tracking exists, `git fetch origin <origin_branch>` → `git merge origin/<origin_branch>` to bring the target's latest into the current branch (on conflict, perform "Conflict Resolution" below inline).
+   - `git merge <stick>` to forward-merge the stick into the current branch (on conflict, perform "Conflict Resolution" below inline).
+3. **push** — `git push origin <origin_branch>`. Use `-u` for the first publish of remote tracking.
+4. **destroy** — `git worktree remove .claude/worktrees/<stick>` → `git branch -d <stick>` → remove the key from state.
 
-### 충돌 해결 (병합 충돌 시 인라인 자동)
-별도 스킬 없이 ship 안에서 직접 수행한다:
-1. **양쪽 의도 파악** — 충돌 hunk마다 ours(현재 브랜치)/theirs(stick 또는 origin) 변경 의도를 코드·plan/spec 근거로 파악.
-2. **규약대로 통합** — `.beaver/memory/` 규칙(최우선) + `CLAUDE.md` 규약에 맞게 양쪽 의도를 보존하며 통합. 한쪽 버리기 금지(둘 다 의미 있으면 합친다).
-3. **마커 정리** — `git diff --check` 로 충돌 마커 잔여 0 확인.
-4. **테스트** — 해당 기능 `commands.test_one`(가능하면 관련 회귀) 실행해 통합 결과 검증.
-5. **승인 후 머지 커밋** — 사용자에게 통합 결과 보고 후 승인받아 커밋. 위험하면 `git merge --abort` 제시.
+### Conflict Resolution (inline auto on merge conflict)
+Performed directly within ship without a separate skill:
+1. **Understand both intents** — for each conflict hunk, determine the intent of the ours (current branch) / theirs (stick or origin) changes, grounded in the code and plan/spec.
+2. **Integrate per conventions** — integrate while preserving both intents, in line with `.beaver/memory/` rules (top priority) + `CLAUDE.md` conventions. Do not discard one side (if both are meaningful, combine them).
+3. **Clean up markers** — confirm zero remaining conflict markers with `git diff --check`.
+4. **Test** — run that feature's `commands.test_one` (and related regression if possible) to verify the integrated result.
+5. **Merge commit after approval** — report the integrated result to the user and commit after approval. If risky, offer `git merge --abort`.
 
-## 4. 보고
-커밋·리뷰·병합 결과. 다음 작업은 `/beaver:plan`.
+## 4. Report
+Commit, review, and merge results. The next step is `/beaver:plan`.
 
-## 주의
-승인 없이 실행 금지. `--no-verify`·force push는 명시 요청 시만(영향 고지).
+## Notes
+Do not run without approval. `--no-verify` and force push only on explicit request (with impact disclosed).

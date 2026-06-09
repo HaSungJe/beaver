@@ -1,29 +1,29 @@
-# Review — {대상} — {YYMMDD}
+# Review — {target} — {YYMMDD}
 
-> 병합 전 코드 리뷰. 누적 변경분을 memory 규칙·CLAUDE.md 규약·plan/spec 의도 대비 점검.
-> 위치: `.beaver/output/review/` — `<stick>-review-<YYMMDD>.md`(stick = 브랜치명 `/`→`-`, ship 단위 1개). 같은 날 재리뷰면 `-<N>`.
+> Pre-merge code review. Check the accumulated changes against the memory rules, CLAUDE.md conventions, and the plan/spec intent.
+> Location: `.beaver/output/review/` — `<stick>-review-<YYMMDD>.md` (stick = branch name with `/`→`-`, one per ship unit). For a re-review on the same day, append `-<N>`.
 
-## 대상
+## Target
 - stick: `{stick}` → origin: `{origin_branch}`
-- 포함 기능: {feature 목록}
-- 변경 범위: {파일 수 / diff 요약}
+- Included features: {feature list}
+- Change scope: {file count / diff summary}
 
-## 규약 점검 (CLAUDE.md 대비)
-| 항목 | 결과 | 비고 |
+## Convention Check (against CLAUDE.md)
+| Item | Result | Notes |
 |------|------|------|
-| 네이밍 | 통과/위반 |  |
-| 구조·레이어 |  |  |
-| 공통 로직 분리 |  |  |
-| 에러·응답 |  |  |
-| 테스트 강도 |  |  |
+| Naming | pass/violation |  |
+| Structure & layering |  |  |
+| Shared logic extraction |  |  |
+| Errors & responses |  |  |
+| Test strength |  |  |
 
-## 의도 동작 확인 (plan/spec 대비)
-<!-- 기능별로 누락·오구현 없는지. -->
+## Intended Behavior Check (against plan/spec)
+<!-- Whether anything is missing or incorrectly implemented, per feature. -->
 
-## 발견 항목
-| # | 심각도 | 위치(경로:라인) | 내용 | 권고 |
+## Findings
+| # | Severity | Location (path:line) | Description | Recommendation |
 |---|--------|-----------------|------|------|
-| 1 | 높음/중간/낮음 |  |  |  |
+| 1 | High/Medium/Low |  |  |  |
 
-## 판정
-<!-- 통과 → 병합 진행 / 수정 필요 → /beaver:build 로 수정 후 재리뷰. 이슈 없으면 "통과 — 이슈 없음". -->
+## Verdict
+<!-- Pass → ship continues to the merge stage / Changes needed → fix on the stick via /beaver:build, then re-run ship (re-review). If there are no issues, write "Pass — no issues". -->

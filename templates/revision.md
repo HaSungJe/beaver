@@ -1,27 +1,27 @@
 # Revision — {featureName} — {YYMMDD}-{N}
 
-> 기존 기능의 변경 기획. 원본 spec.md / plan.md 는 수정하지 않고 참조만 한다.
+> Change plan for an existing feature. The original spec.md / plan.md are not modified, only referenced.
 
-## 변경요청 사유
-<!-- 왜 바꾸는지 한두 줄 -->
+## Reason for Change Request
+<!-- One or two lines on why this is changing -->
 
-## 변경 전 → 후 스펙
-<!-- 무엇이 어떻게 달라지는지. 제거되는 분기/추가되는 분기 명시 -->
+## Spec Before → After
+<!-- What changes and how. Specify removed branches / added branches -->
 
-| 항목 | 변경 전 | 변경 후 |
-|------|---------|---------|
+| Item | Before | After |
+|------|--------|-------|
 |  |  |  |
 
-## 영향받는 파일
-| 파일 | 변경 유형 | 설명 |
-|------|-----------|------|
-| `<경로>` | 수정/추가/삭제 |  |
+## Affected Files
+| File | Change Type | Description |
+|------|-------------|-------------|
+| `<path>` | modify/add/delete |  |
 
-## 확정 설계 결정사항
+## Decisions
 <!--
-  변경에 CLAUDE.md만으로 판단 못 하는 항목이 있으면 - [ ] 로 나열. 답이 채워져야 build 진입.
-  없으면 이 섹션 삭제.
+  If the change involves anything that cannot be decided from CLAUDE.md alone, list it with - [ ]. The answers must be filled in before entering build.
+  Delete this section if there are none.
 -->
 
-## 사전 구현 필요 항목
-<!-- 변경이 새 인프라를 요구하면 - [ ] 로. 모두 [x] 되기 전 build 진입 불가. 없으면 삭제. -->
+## Prerequisites
+<!-- If the change requires new infrastructure, list it with - [ ]. build cannot start until all are [x]. Delete if none. -->

@@ -1,30 +1,30 @@
 ---
 name: refactor
-description: 코드를 리팩토링한다(비슷한 기능 묶기, 중복 제거, 공통 로직 추출). 계획서를 먼저 쓰고 조정·승인 후 실행, 동작 보존을 테스트로 검증. "리팩토링", "비슷한 기능 묶어줘", "중복 정리", "공통화" 요청에 발동.
+description: Refactor code (group similar features, remove duplication, extract shared logic). Write a plan first, then execute after adjustment and approval, verifying behavior preservation with tests. Triggers on "리팩토링", "비슷한 기능 묶어줘", "중복 정리", "공통화", "refactor", "group similar features", "clean up duplication" requests.
 ---
 
-# refactor — 계획 기반 구조 정리
+# refactor — Plan-Based Structural Cleanup
 
-동작을 바꾸지 않고 구조를 개선한다. 계획서 작성 → 조정·승인 → 실행(단계별 테스트). 분리 기준은 `CLAUDE.md` 규약.
+Improve structure without changing behavior. Write a plan → adjust and approve → execute (with step-by-step tests). The separation criteria come from the `CLAUDE.md` convention.
 
 ## 0. memory + green baseline
-**memory 먼저 읽기**: `.beaver/memory/`(MEMORY.md + 관련 토픽)를 읽어 분리·배치 판단에 **최우선** 적용(memory > CLAUDE.md). 작업 중 지속 규칙 지적 시 확인 후 저장 — 프로토콜 `${CLAUDE_PLUGIN_ROOT}/templates/memory-protocol.md`.
-`commands.test` 1회로 통과 상태 확인. 깨져 있으면 회귀 판별 불가임을 알린다.
+**Read memory first**: read `.beaver/memory/` (MEMORY.md + related topics) and give it **top priority** when judging separation and placement (memory > CLAUDE.md > defaults). When a recurring rule is pointed out during work, confirm and then store it — protocol `${CLAUDE_PLUGIN_ROOT}/templates/memory-protocol.md`.
+Run `commands.test` once to confirm a passing state. If it is broken, report that regressions cannot be distinguished.
 
-## 1. 대상 식별
-지정 범위가 있으면 그 안에서, 없으면 스캔(Grep/Read): 중복/유사 로직 / CLAUDE.md 기준상 util·module로 빠져야 할 오배치 / 묶을 기능 군집. 각 발견은 근거(경로:라인) 포함.
+## 1. Target Identification
+If a scope is specified, work within it; otherwise scan (Grep/Read) for: duplicate/similar logic / misplacements that should be extracted into a util or module per the CLAUDE.md criteria / clusters of features to group. Each finding includes its evidence (path:line).
 
-## 2. 계획서 작성
-`${CLAUDE_PLUGIN_ROOT}/templates/refactor-plan.md` 기반 `.beaver/output/refactor/<name>-refactor-<YYMMDD>.md`: 목표/범위, baseline, 발견 목록, 변경 방안, 작은 단위 실행 순서, 영향 파일, 테스트 전략, 리스크.
+## 2. Plan Writing
+Based on `${CLAUDE_PLUGIN_ROOT}/templates/refactor-plan.md`, write `.beaver/output/refactor/<name>-refactor-<YYMMDD>.md`: goals/scope, baseline, list of findings, change approach, small-unit execution order, affected files, test strategy, risks.
 
-## 3. 조정·승인
-계획서 제시 → 우선순위·범위 조정. 너무 넓게 가지 않는다. **승인 전 코드 수정 금지.**
+## 3. Adjustment and Approval
+Present the plan → adjust priorities and scope. Do not go too broad. **No code changes before approval.**
 
-## 4. 실행
-실행 순서대로 작은 단위로: 공통 로직을 CLAUDE.md 규약 위치(전역/도메인 util, 공용 module)로 추출 → 호출부 교체(시그니처·네이밍 규약) → 죽은 코드 제거. **각 단계 후 테스트** — 영향 범위가 좁으면 해당 `commands.test_one`, 넓으면 전체 `commands.test`로 확인하고, 깨지면 즉시 처리하거나 직전 단계로 되돌린다. 계획서 체크박스 갱신. (테스트 커맨드가 없는 프로젝트면 동작 보존 입증이 불가함을 고지하고 진행 여부를 사용자에게 확인.)
+## 4. Execution
+Proceed in small units following the execution order: extract shared logic into the location dictated by the CLAUDE.md convention (global/domain util, shared module) → replace call sites (signature and naming conventions) → remove dead code. **Test after each step** — if the affected files are within a single module, run that `commands.test_one`; if the call sites span multiple domains, verify with the full `commands.test`, and if it breaks, fix it immediately or roll back to the previous step (revert via git — refactor does not use a stick worktree, so roll back step by step with `git checkout`/`stash`). Update the plan's checkboxes. (If the project has no test command, notify the user that behavior preservation cannot be proven and confirm whether to proceed.)
 
-## 5. 검증·보고
-**전체 `commands.test` 통과로 동작 보존 입증**(중간 단계에서 test_one만 돌렸어도 마지막엔 전체를 돌린다). 무엇을 어디로 묶었는지(규약 근거) 보고. 큰 건은 `/beaver:ship`에서 커밋 분리 제안.
+## 5. Verification and Reporting
+**Prove behavior preservation with a full `commands.test` pass** (§4 is per-step partial testing; §5 is a single final full regression). Report what was grouped where (with the convention as the rationale). refactor does not commit — `/beaver:ship` commits. **However, ship only works inside a stick worktree (entered via plan)**, so if you refactored standalone outside a stick (on the original branch), the user commits it themselves.
 
-## 주의
-동작 변경(기능 추가/수정)은 리팩토링 아님 → `/beaver:plan`→`build`. 테스트 없는 영역은 위험 고지(필요시 characterization 테스트 선행).
+## Caution
+Behavior changes (adding/modifying features) are not refactoring → `/beaver:plan`→`build`. For areas without tests, warn about the risk (add characterization tests first if needed).

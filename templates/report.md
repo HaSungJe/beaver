@@ -1,23 +1,23 @@
 # Report — {featureName}
 
-## 기능 요약
-- **기능**: {feature_goal}
-- **진입점**: `{api_method} {api_path}`
-- **도메인**: {domain}
+## Feature Summary
+- **Feature**: {feature_goal}
+- **Entry point**: `{api_method} {api_path}`
+- **Domain**: {domain}
 
-## 생성/수정/삭제된 파일
-| 파일 | 변경 유형 | 설명 |
+## Created/Modified/Deleted Files
+| File | Change Type | Description |
 |------|-----------|------|
-| `<경로>` | 생성/수정/삭제 |  |
+| `<path>` | created/modified/deleted |  |
 
-## 테스트 결과
-- 스위트: N / 전체: N / 통과: N / 실패: N
+## Test Results
+- Suites: N / Total: N / Passed: N / Failed: N
 
-## 자가 수복 이력
-<!-- 재시도가 있었으면 원인·수정 내용. 없으면 "없음 — 최초 실행 통과" -->
+## Self-Heal History
+<!-- If there were retries, describe cause and fix. If none, write "None — passed on first run" -->
 
-## 잔여 이슈
-<!-- 없으면 "없음" -->
+## Remaining Issues
+<!-- If none, write "None" -->
 
-<!-- 변경 모드(build)는 원본 재작성 없이 이 파일 끝에 회차 섹션을 추기:
-     ## 수정 - {YYMMDD}-{N} → 변경사항 요약 / 변경 파일 / 테스트 결과 / 자가수복 이력 / 잔여 이슈 -->
+<!-- For change mode (build), do not rewrite the original; append a round section to the end of this file:
+     ## Revision - {YYMMDD}-{N} → Change summary / Changed files / Test results / Self-heal history / Remaining issues -->

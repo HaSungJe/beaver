@@ -1,40 +1,40 @@
 # Refactor Plan — {name} — {YYMMDD}
 
-> 동작을 바꾸지 않고 구조를 개선하는 계획서. 사용자가 검토·조정·승인한 뒤에만 실행한다.
-> 산출물 위치: `.beaver/output/refactor/<name>-refactor-<YYMMDD>.md`
+> A plan to improve structure without changing behavior. Execute only after the user has reviewed, adjusted, and approved it.
+> Artifact location: `.beaver/output/refactor/<name>-refactor-<YYMMDD>.md`
 
-## 목표 / 범위
-<!-- 무엇을 왜 개선하는가. 대상 범위(파일/디렉터리/기능군)와 명시적 비범위(이번엔 건드리지 않을 것). -->
+## Goal / Scope
+<!-- What is being improved and why. The target scope (files/directories/feature groups) and the explicit non-scope (what will not be touched this time). -->
 
 ## green baseline
-<!-- 시작 시점 전체 테스트 상태. 통과해야 리팩토링 회귀 판별 가능. -->
-- 테스트 커맨드: `{commands.test}`
-- 상태: [ ] 통과 확인 / [ ] 미통과(사유:        )
+<!-- The full test status at the starting point. Must pass so that refactoring regressions can be detected. -->
+- Test command: `{commands.test}`
+- Status: [ ] green confirmed (if not passing, reason: ________)
 
-## 발견 목록
-<!-- 실제 코드 근거(경로:라인)와 함께. 각 항목이 왜 문제인지 한 줄. -->
+## Findings
+<!-- Backed by actual code evidence (path:line). One line on why each item is a problem. -->
 
-| # | 유형 | 위치 (경로:라인) | 내용 | 규약 근거 |
+| # | Type | Location (path:line) | Description | Convention Basis |
 |---|------|------------------|------|-----------|
-| 1 | 중복/유사 |  |  | CLAUDE.md 공통 로직 분리 기준 |
-| 2 | 오배치(util/module로 빠져야) |  |  |  |
-| 3 | 기능 군집(묶기 후보) |  |  |  |
+| 1 | Duplicate/similar |  |  | CLAUDE.md criteria for extracting common logic |
+| 2 | Misplaced (should move to util/module) |  |  |  |
+| 3 | Feature cluster (grouping candidate) |  |  |  |
 
-## 변경 방안
-<!-- 각 발견을 어디로 어떻게 묶/추출할지. 새 위치는 CLAUDE.md 규약대로(전역 util / 도메인 util / 공용 module). 시그니처·네이밍 규약 준수. -->
+## Change Plan
+<!-- How and where to group/extract each finding. The new location follows the CLAUDE.md conventions (global util / domain util / shared module). Adhere to signature and naming conventions. -->
 
-## 실행 순서 (작은 단위)
-<!-- 동작 보존을 위해 작은 의미 단위로 쪼갠 순서. 각 단계 후 테스트. -->
-1. [ ] <단계> → 테스트
-2. [ ] <단계> → 테스트
+## Execution Order (small steps)
+<!-- An order broken into small semantic units to preserve behavior. Test after each step. -->
+1. [ ] <step> → test
+2. [ ] <step> → test
 
-## 영향 파일
-| 파일 | 변경 유형 | 설명 |
+## Affected Files
+| File | Change Type | Description |
 |------|-----------|------|
-| `<경로>` | 추출/이동/삭제/호출부 교체 |  |
+| `<path>` | extract/move/delete/replace call site |  |
 
-## 동작 보존 · 테스트 전략
-<!-- 각 단계마다 무엇으로 green을 확인하는지. 테스트 없는 영역이면 characterization 테스트 선행 여부. -->
+## Behavior Preservation · Test Strategy
+<!-- What confirms green at each step. If the area has no tests, whether characterization tests come first. -->
 
-## 리스크
-<!-- 넓게 퍼지는 변경, 테스트 공백, 외부 의존 등. 없으면 "없음". -->
+## Risks
+<!-- Widely propagating changes, test gaps, external dependencies, etc. If none, "None". -->
