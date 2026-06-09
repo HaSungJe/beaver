@@ -8,7 +8,7 @@ description: Implements a planned plan/revision test-first (TDD), then self-heal
 build **does not commit** — it only implements and tests, accumulating on the stick branch. Deployment is done via `/beaver:ship`.
 
 ## 0. Memory First + Mode/Target
-**Read memory first**: read `.beaver/memory/` (MEMORY.md + relevant topics) and apply it with **top priority** throughout implementation (memory > CLAUDE.md > defaults). If the user points out a persistent rule during implementation (e.g., "handle UK/FK only in the repository, not the service"), **confirm and save it**, then apply immediately — protocol: `${CLAUDE_PLUGIN_ROOT}/templates/memory-protocol.md`. If it conflicts with or reinforces a CLAUDE.md convention, also propose reflecting it in CLAUDE.md (do not edit immediately; only apply memory-first).
+**Read memory first**: read `.beaver/memory/` (MEMORY.md + relevant topics) and apply it with **top priority** throughout implementation (memory > CLAUDE.md > defaults). If the user points out a persistent rule during implementation (a constraint on where some responsibility belongs in this project's own structure), **confirm and save it**, then apply immediately — protocol: `${CLAUDE_PLUGIN_ROOT}/templates/memory-protocol.md`. If it conflicts with or reinforces a CLAUDE.md convention, also propose reflecting it in CLAUDE.md (do not edit immediately; only apply memory-first).
 
 ### Mode/Target
 > **Unapplied revision** = a `revision-*.md` whose round has not yet been added to the report (= an unimplemented change).
@@ -21,19 +21,19 @@ build **does not commit** — it only implements and tests, accumulating on the 
 
 ## 1.5 Preparation (parallel fan-out, for speed)
 Only the preparation work before implementation is finished quickly via fan-out (parallel first: Workflow parallel / Task distribution / sequential if not possible):
-- Analyze the plan/revision (read file list, layers, and test cases carefully)
+- Analyze the plan/revision (read file list, layers/units, and test cases carefully)
 - Map existing code to be touched (path:line)
 - Flesh out test cases (per CLAUDE.md testing strength)
-- Identify reusable utils/services
+- Identify reusable units — derive the units this project **actually** reuses from code evidence (path:line) and refer to them by the project's own names.
 
 The output feeds into §2 (red) and §3 (green) as input. **Preparation is parallel; implementation (§2–3) is sequential TDD** — preserve the red→green discipline (do not parallelize implementation).
 
 ## 2. Test First (red)
-Write the plan/revision's "test cases" as **actual test code first** — at the strength of the CLAUDE.md testing convention (do not just verify status codes). Run `commands.test_one` (with `$NAME` substituted) and confirm it **fails as intended (red)** (no implementation yet → failing is correct). If compilation is blocked, leave only the signature/stub to secure the red state. *When the test is saved, the `self-heal` hook runs automatically — the first red is normal, and you then make it green with the implementation. However, this first red also consumes one `.retry-count`, so the automatic retries remaining until green are `self_heal_retry_limit - 1`.*
+Write the plan/revision's "test cases" as **actual test code first** — at the strength of the CLAUDE.md testing convention (do not just verify the outcome/interface contract — assert the real behavior). Exercise the entry point at full strength using the testing tools and patterns this project **actually** uses (derive them from code evidence and the CLAUDE.md testing convention; do not assume any position-specific test construct). Run `commands.test_one` (with `$NAME` substituted) and confirm it **fails as intended (red)** (no implementation yet → failing is correct). If compilation is blocked, leave only the signature/stub to secure the red state. *When the test is saved, the `self-heal` hook runs automatically — the first red is normal, and you then make it green with the implementation. However, this first red also consumes one `.retry-count`, so the automatic retries remaining until green are `self_heal_retry_limit - 1`.*
 
 ## 3. Implement → green
 Implement the plan/revision design per the `config.json` paths + `CLAUDE.md` conventions so the tests pass. In modification mode, reflect only the "post-change spec" and clean up removed branches.
-- On failure, analyze, fix, and rerun (up to `self_heal_retry_limit`, default 5). The `self-heal` hook assists automatically on implementation-file saves **only while a retry is in progress (`.retry-count` exists)** (the first red in §2 creates `.retry-count`).
+- On failure, analyze, fix, and rerun (up to `self_heal_retry_limit`, default 5). The `self-heal` hook assists automatically on implementation-file saves **only while a retry is in progress (`.retry-count` exists)** (the first red in §2 creates `.retry-count`). "green" need not be a unit-test pass: depending on the project the command that decides green (`commands.test_one`) may be a typecheck, a build, or another runner — use whatever this project actually uses; the workflow (red→green→self-heal) is identical, only that command differs.
 - **Check only the tests created in this task (`test_one`).** Full regression of all existing tests is not run in build — it is run once just before the `/beaver:ship` merge (since multiple features accumulate on the stick, avoid the waste of running the full suite on every build).
 - **Draft convention sync**: if a draft convention document created by plan §4.5 exists (`beaver:draft` marker) and the implementation diverges from the design (self-heal, approach change, etc.), **update that document to match the actual code**. Keep the marker (finalization happens at ship). Keep code↔convention draft always in sync.
 
@@ -52,4 +52,4 @@ Based on `${CLAUDE_PLUGIN_ROOT}/templates/report.md`:
 - Modification → append `## Modification - <YYMMDD>-<N>` to the end of the existing report.
 
 ## 5. Reporting
-**Verify before completion**: not just that tests pass, but that it behaves as the plan/spec intends (check for omissions and misimplementations; actually run/call it if possible). Then report the results truthfully. If there is more work, accumulate with `/beaver:plan`→`build`; if done, `/beaver:ship`.
+**Verify before completion**: not just that tests pass, but that it behaves as the plan/spec intends (check for omissions and misimplementations; actually exercise it if possible — using whatever exercise path this project actually supports). Then report the results truthfully. If there is more work, accumulate with `/beaver:plan`→`build`; if done, `/beaver:ship`.

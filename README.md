@@ -1,13 +1,16 @@
 # 🦫 Beaver
 
-A Claude Code plugin that first analyzes your codebase to produce a project convention document (`CLAUDE.md`), then uses those conventions as the single source of truth to consistently carry out **analyze → plan → build → ship (merge & push to the original branch) → refactor**. Planning and implementation happen in isolated stick worktrees under `.claude/worktrees/`, enabling **parallel work across multiple sessions**. Language-agnostic (NestJS · Spring · Python · Go · …).
+A Claude Code plugin that first analyzes your codebase to produce a project convention document (`CLAUDE.md`), then uses those conventions as the single source of truth to consistently carry out **analyze → plan → build → ship (merge & push to the original branch) → refactor**. Planning and implementation happen in isolated stick worktrees under `.claude/worktrees/`, enabling **parallel work across multiple sessions**. Language-, framework-, and position-agnostic — backend (NestJS · Spring · Python · Go · …), frontend (Next.js · React), and mobile · CLI · library projects alike.
+
+<!-- Beaver is not tied to backend stacks. It generalizes across positions via four core terms — LAYER/UNIT (responsibility unit), ENTRY POINT (external reachable surface), DATA/AFFECTED STATE (state read or changed), OUTCOME/INTERFACE CONTRACT (the result an entry point produces). Each term is filled by whatever the project actually uses, derived from code evidence (path:line) and named exactly as the project names it — analyze discovers the real constructs rather than assuming any position-specific vocabulary. -->
+
 
 ## Benefits
 
 - **Consistency** — every artifact follows the `CLAUDE.md` conventions derived from the actual code.
 - **Standard procedure** — for every feature, plan → build → ship repeats as the same flow, and ship merges & pushes directly into the original working branch.
 - **Parallel work** — sticks are isolated under `.claude/worktrees/` (per-session cwd switching), so running different features simultaneously across sessions does not conflict.
-- **Regression prevention** — document structure validation + test self-heal (default 5 attempts, falling back into plan when stuck) + inline merge conflict resolution. **Where tests run**: build runs only that feature's tests (`test_one`), while **just before the ship merge** the full regression (`commands.test`) runs — balancing speed and a safety net together.
+- **Regression prevention** — document structure validation + test self-heal (default 5 attempts, falling back into plan when stuck) + inline merge conflict resolution. **Where tests run**: build runs only that feature's tests (`test_one`), while the full regression (`commands.test`) runs **just before the ship merge** — balancing speed against a safety net.
 - **Rule accumulation (memory)** — user corrections during work accumulate in `.beaver/memory/` and are applied with **top priority** (memory > CLAUDE.md > default) in later work. The same correction is never repeated.
 - **Multi-language support** — it detects the stack and records test/build commands in `.beaver/config.json`, so it stays language-agnostic.
 - **Review checkpoints** — plan's interactive decision gate, ship's code review, and approval-based commit/merge/push mean a human verifies every step.
@@ -78,7 +81,7 @@ This is what each skill actually does. **All git/file operations, tests, and app
 
 - **Memory first** — on entry it reads `.beaver/memory/` (MEMORY.md + topics) first to apply user rules with top priority, and proposes formally reconciling unapplied entries into `CLAUDE.md`/`docs/`.
 - **Merge existing CLAUDE.md** — if present, confirm before overwriting; preserve unique rules and refresh only the "Beaver settings" block.
-- **Stack detection** — identifies framework and test/build commands from the manifest (`package.json`/`pom.xml`/`build.gradle`/`pyproject.toml`/`go.mod`/`Cargo.toml`) (with user confirmation). Decision points not determined by code (ORM · auth · cache, etc.) are asked, with a recommendation, only when there are two or more alternatives.
+- **Stack detection** — identifies the framework and test/build commands from the manifest (`package.json`/`pom.xml`/`build.gradle`/`pyproject.toml`/`go.mod`/`Cargo.toml`), with user confirmation. Decision points not settled by code are asked, with a recommendation, only when there are two or more alternatives — derived from what this project actually leaves open (with code evidence where it exists); the questions follow the detected framework's idiomatic baseline rather than a fixed catalog.
 - **Analysis** — for existing code, it reads representative files and extracts rules with evidence (path:line) (using `agents/`' architecture-mapper · convention-scout · test-pattern-analyzer in Workflow-parallel / Task-distributed / sequential fashion). For new, empty projects it adopts the framework's standard structure. **Fabrication prevention**: assets with zero usages are read by signature only, and infrastructure that is implemented but unapplied is honestly labeled as "unapplied/convention".
 - **Artifacts** — root `CLAUDE.md` (`templates/CLAUDE.template.md` structure, fixed "Beaver settings" block) + `docs/<topic>.md` (only the ones used among architecture · conventions · data-layer · error-handling · api · testing) + `.beaver/config.json` (stack · commands · paths · branch · self_heal_retry_limit). Every rule is labeled with its source (measured path / "standard: 〈framework〉 recommendation" / "choice: user").
 - analyze itself **does not create branches or run tests** — it only records values into config (stick worktree creation and test execution belong to plan/build/ship).
@@ -136,7 +139,7 @@ This is what each skill actually does. **All git/file operations, tests, and app
 
 ## User Rule Memory (`.beaver/memory/`)
 
-When a user corrects a convention or expresses a preference during work ("handle UK/FK only in repository, not service", etc.), every stage remembers and applies it with priority.
+When a user corrects a convention or expresses a preference during work (e.g. "handle this kind of validation only in such-and-such unit, not elsewhere" — phrased in the project's own constructs), every stage remembers and applies it with priority.
 
 - **Save (after confirmation)** — if judged to be a persistent rule, confirm "save to memory?" → accumulate in `.beaver/memory/<topic>.md` (+ `MEMORY.md` index). One-off instructions or facts derivable from code are not saved.
 - **Priority** — `memory > CLAUDE.md > framework default`. On conflict, memory wins. **Every stage reads it first on entry** and applies it (plan · build · refactor for implementation/integration decisions; ship for review · reconcile · conflict integration).
@@ -159,23 +162,25 @@ When a user corrects a convention or expresses a preference during work ("handle
 
 ## How Multi-language Works
 
-`/beaver:analyze` detects the stack and records the **test/build commands and path conventions** in `.beaver/config.json`. From then on, every stage and hook reads this config, so it stays language-independent.
+`/beaver:analyze` detects the stack and records the **test/build commands and path conventions** in `.beaver/config.json`. From then on, every stage and hook reads this config, so it stays language- and framework-independent.
 
 ```jsonc
 {
   "project_name": "...",
-  "stack": ["nestjs"],
+  "stack": ["..."],                                       // detected stack id(s)
   "commands": {
-    "test": "npm test",                                   // full regression (just before ship merge)
-    "test_one": "npm test -- --testPathPatterns=$NAME",   // single feature (build) — for pytest, "pytest -k $NAME", etc.
-    "build": "npm run build",
-    "lint": "npm run lint"
+    "test": "...",                                        // full regression (just before ship merge)
+    "test_one": "...",                                    // single feature (build) — $NAME is substituted
+    "build": "...",
+    "lint": "..."
   },
-  "paths": { "source_root": "src", "test_glob": "**/*.spec.ts" },
+  "paths": { "source_root": "...", "test_glob": "..." },
   "branch": { "stick_prefix": "stick" },
   "self_heal_retry_limit": 5
 }
 ```
+
+Every value above is resolved from what this project actually uses: analyze derives the stack id, the test/build/lint commands, the source root, and the test glob from code evidence (path:line) and the detected framework's idiomatic baseline, recording each exactly as the project expresses it. `$NAME` in `test_one` is substituted with the feature name at build time. If a field has no basis in the project, it is left out rather than guessed.
 
 ---
 

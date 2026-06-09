@@ -44,17 +44,20 @@ This project is managed with [Beaver](https://github.com/HaSungJe/beaver). Each 
 ## Architecture
 <!-- What to include: stack (framework + version + core dependencies) · directory layout (with role notes) · layer boundaries (who calls whom)
        · stack-specific patterns (DI registration/injection tokens, transaction wrappers, schedulers, import aliases) · minimal file structure for a new domain + steps to add one.
-     Depth: in the body, one line for the stack + a tree summary. Put layer rules, pattern examples, and the new-domain procedure in → docs/architecture.md. -->
+     Depth: in the body, one line for the stack + a tree summary. Put layer rules, pattern examples, and the new-domain procedure in → docs/architecture.md.
+     LAYER/UNIT = the responsibility-separation unit of any stack; "who calls whom" generalizes to the call/render boundary. Derive the project's actual UNITs/LAYERs and their boundary from code evidence (path:line) and record them under the names the project itself uses — never assume a particular framework's syntax; describe only what the code shows. For a brand-new project with no code, fall back to the idiomatic baseline of the detected framework. -->
 → Details: [docs/architecture.md](docs/architecture.md)
 
 ## Conventions
 <!-- What to include: naming (entity/DTO/model/util/file/class) · directory and file-name rules · route path rules
        · controller (handler) input parameter type rules (no `any`, etc.) · path/query param casing (snake/camel) unified across all layers.
-     Depth: a non-conflicting naming formula (`<Domain><Feature><Role>`, etc.) and prohibitions, with examples. If long, → docs/conventions.md. -->
+     Depth: a non-conflicting naming formula (`<Domain><Feature><Role>`, etc.) and prohibitions, with examples. If long, → docs/conventions.md.
+     ENTRY POINT = whatever surface the stack exposes to receive input. Apply the same casing/typing rules to the actual entry points and named units this project uses, deriving them from code evidence (path:line) and recording them under the project's own names. If a given convention category does not apply, omit it. -->
 
 ## Service (Business) Layer Rules
 <!-- What to include: service method granularity (feature = 1:1 with API, etc.) · criteria for splitting reusable/pure logic into utils · the boundary for allowing/forbidding private helpers.
-     Depth: codify 1-2 judgment criteria like "Could this function plausibly be used by other features too?". Simplify for stacks without an ORM/layers. -->
+     Depth: codify 1-2 judgment criteria like "Could this function plausibly be used by other features too?". Simplify for stacks without an ORM/layers.
+     "Service layer" is one name for the business-logic UNIT. Apply the same granularity/reuse rules wherever this project's business logic actually lives — locate it from code evidence (path:line) and use the project's own names. If the project has no distinct business-logic unit, simplify or omit accordingly. -->
 
 ## Shared Logic Separation
 <!-- What to include: the criteria for splitting util (pure functions, stateless) vs module/service (DI, lifecycle, external integration). This becomes the basis for refactor's decisions.
@@ -63,16 +66,20 @@ This project is managed with [Beaver](https://github.com/HaSungJe/beaver). Each 
 ## Data Layer
 <!-- What to include: entity/model rules (constraint naming PK/UK/IDX/FK, column options, timestamp hooks) · repository/DAO rules (prefer generic methods, where to assemble `where`, try/catch)
        · query/pagination patterns (single-method pattern, etc.) · transaction boundaries · query-DTO constructor rules.
-     Depth: entity templates, repository templates, and pagination step tables go in → docs/data-layer.md (if entity/repository get heavy, split further into entity.md / repository.md). Delete the section if there is no ORM/DB. -->
+     Depth: entity templates, repository templates, and pagination step tables go in → docs/data-layer.md (if entity/repository get heavy, split further into entity.md / repository.md).
+     A data layer exists whenever the stack PERSISTS state OR FETCHES remote data — not only when there is an ORM/DB. Delete the section only if the unit neither persists nor fetches.
+     DATA / AFFECTED STATE = whatever this project reads or writes (DB, files, network, config, in-memory/client state). Derive the actual persistence/fetch mechanism and its conventions from code evidence (path:line) and record them under the project's own names — don't assume an ORM. If the project neither persists nor fetches, delete the section. -->
 → Details: [docs/data-layer.md](docs/data-layer.md)
 
 ## Validation
 <!-- What to include: validation approach (decorator/schema/manual) · required options (forced `message`, etc.) · prohibited decorators and ordering rules · error-message source (i18n keys/constants) · validation error key naming.
-     Depth: 3-6 lines + 1 example. For multilingual projects, share the key rules with the i18n section. -->
+     Depth: 3-6 lines + 1 example. For multilingual projects, share the key rules with the i18n section.
+     Record the validation approach this project actually uses, derived from code evidence (path:line) and named as the project names it — including where input is (re-)validated and the error-key/message source. If there is no validation, delete the section. -->
 
 ## Error & Response
 <!-- What to include: exception types/hierarchy · where to throw/catch (unified phrasing in repository vs branching in service) · DB error-code mapping (duplicate/FK violation, etc.) · unified response wrapper shape · status-code policy · criteria for including validationErrors (only user-input errors, etc.).
-     Depth: core principles in the body. Pattern code, error-code tables, and the validationErrors criteria table go in → docs/error-handling.md. -->
+     Depth: core principles in the body. Pattern code, error-code tables, and the validationErrors criteria table go in → docs/error-handling.md.
+     OUTCOME / INTERFACE CONTRACT = what each entry point produces (return value, status, thrown error, redirect, exit code, rendered state — whatever applies). Derive this project's actual outcome shape and error-handling convention from code evidence (path:line) and record them under the project's own names. -->
 → Details: [docs/error-handling.md](docs/error-handling.md)
 
 ## API & Docs
@@ -82,23 +89,27 @@ This project is managed with [Beaver](https://github.com/HaSungJe/beaver). Each 
 
 ## Auth
 <!-- What to include: where authentication/authorization is declared (controller/method guards, role decorators) · how the logged-in user's info is injected (use a dedicated decorator, no raw request, etc.) · token/session handling.
-     Depth: 3-6 lines + 1 example. Delete the section if there is no authentication. -->
+     Depth: 3-6 lines + 1 example. Delete the section if there is no authentication.
+     Record where authentication/authorization is actually enforced in this project, where the session/identity is read, and the protected-surface rule — derived from code evidence (path:line) and named as the project names them. If there is no authentication, delete the section. -->
 
 ## i18n / Localization
 <!-- What to include: library and how the language is received (header/fallback) · language-pack file structure and key naming · how to use the translation helper · code comment rules (e.g. placing the original text next to the key) · handling of non-HTTP contexts (queue/scheduler) · injecting context in tests.
      Depth: if long, → docs/i18n.md. Delete the section if localization is not supported. -->
 
 ## Async / Queue / Scheduler
-<!-- What to include: queue/message infrastructure registration · what it applies to (write methods, etc.) · consumer/job key naming · FIFO/concurrency policy · scheduler registration rules · steps to apply it to a new domain.
+<!-- Delete this section entirely when the codebase has no deferred/background/scheduled processing (do not add it speculatively).
+     What to include (if present): the async/queue/scheduled mechanism this project actually uses, what it applies to, its registration and key-naming rules, concurrency/ordering policy, and how to apply it to a new unit — all derived from code evidence (path:line) and named as the project names them.
      Depth: if long, → docs/async.md. Delete the section if there is no async processing. -->
 
 ## Key Patterns
 <!-- What to include: stack-specific idiomatic patterns that don't fit the sections above, one line each (DI token approach, transaction decorators, import aliases, module registration metadata, etc.).
-     Depth: one bullet each. If it overlaps, absorb it into Architecture and delete this section. -->
+     Depth: one bullet each. If it overlaps, absorb it into Architecture and delete this section.
+     List only the idiomatic patterns this project actually uses, derived from code evidence (path:line) and named as the project names them — don't enumerate idioms the code doesn't show. If there are none beyond what Architecture covers, delete this section. -->
 
 ## Testing
 <!-- What to include: framework · location (file rules) · unit/integration policy (mock scope, whether real DB/external I/O is forbidden) · case structure (SUCCESS/FAIL split) · strictness rules (call-count, arguments, not-called assertions) · run command · regression-failure handling policy.
-     Depth: strictness rules and case-sampling tables go in → docs/testing.md. -->
+     Depth: strictness rules and case-sampling tables go in → docs/testing.md.
+     Record the test framework, file glob, and unit/integration/E2E split this project actually uses, derived from code evidence (path:line) and named as the project names them. For a brand-new project with no tests, fall back to the idiomatic baseline of the detected framework. -->
 → Details: [docs/testing.md](docs/testing.md)
 
 ## Checklist

@@ -1,6 +1,9 @@
 # 🦫 Beaver
 
-코드베이스를 먼저 분석해 프로젝트 규약 문서(`CLAUDE.md`)를 만들고, 그 규약을 단일 근거로 **분석 → 기획 → 개발 → 배포(원래 브랜치 병합·푸쉬) → 리팩토링**을 일관되게 수행하는 Claude Code 플러그인. 기획·구현은 `.claude/worktrees/`에 격리된 stick 워크트리에서 이뤄져 **여러 세션 병렬 작업**이 가능하다. 언어 무관 (NestJS · Spring · Python · Go · …).
+코드베이스를 먼저 분석해 프로젝트 규약 문서(`CLAUDE.md`)를 만들고, 그 규약을 단일 근거로 **분석 → 기획 → 개발 → 배포(원래 브랜치 병합·푸쉬) → 리팩토링**을 일관되게 수행하는 Claude Code 플러그인. 기획·구현은 `.claude/worktrees/`에 격리된 stick 워크트리에서 이뤄져 **여러 세션 병렬 작업**이 가능하다. 언어·프레임워크·포지션 무관 — 백엔드(NestJS · Spring · Python · Go · …), 프런트엔드(Next.js · React), 그리고 모바일 · CLI · 라이브러리 프로젝트까지 동일하게.
+
+<!-- Beaver는 백엔드 스택에 묶이지 않는다. 네 가지 핵심 용어로 포지션을 가로질러 일반화한다 — LAYER/UNIT(책임 단위), ENTRY POINT(외부 도달 표면), DATA/AFFECTED STATE(읽고/바꾸는 상태), OUTCOME/INTERFACE CONTRACT(진입점이 만드는 결과). 각 용어는 이 프로젝트가 실제로 쓰는 것으로 채워진다 — analyze가 코드 근거(경로:라인)로 도출해 프로젝트가 쓰는 이름 그대로 기록하며, 특정 포지션 구문을 가정하지 않고 실재하는 구성요소를 발견한다. -->
+
 
 ## 기대 효과
 
@@ -78,7 +81,7 @@ refactor       # 독립 · 필요 시 (계획서 → 실행, 동작 보존)
 
 - **memory 우선** — 진입 시 `.beaver/memory/`(MEMORY.md + 토픽)를 먼저 읽어 사용자 규칙을 최우선 반영하고, 미반영 엔트리는 `CLAUDE.md`/`docs/` 정식 반영(reconcile)을 제안한다.
 - **기존 CLAUDE.md 병합** — 있으면 덮어쓰기 전 확인, 고유 규칙은 보존하고 "Beaver 설정" 블록만 갱신.
-- **스택 감지** — 매니페스트(`package.json`/`pom.xml`/`build.gradle`/`pyproject.toml`/`go.mod`/`Cargo.toml`)로 프레임워크·test/build 커맨드 식별(사용자 확인). 코드로 안 정해지는 결정 포인트(ORM·auth·캐시 등)는 대안이 2개 이상일 때만 권장안과 함께 질문.
+- **스택 감지** — 매니페스트(`package.json`/`pom.xml`/`build.gradle`/`pyproject.toml`/`go.mod`/`Cargo.toml`)로 프레임워크·test/build 커맨드 식별(사용자 확인). 코드로 안 정해지는 결정 포인트는 대안이 2개 이상일 때만 권장안과 함께 질문 — 이 프로젝트가 실제로 열어둔 지점을 근거(있으면 경로:라인)로 도출하며, 질문은 고정 카탈로그가 아니라 감지된 프레임워크의 관용 베이스라인을 따른다.
 - **분석** — 기존 코드면 대표 파일을 읽어 근거(경로:라인)로 규칙 추출(`agents/`의 architecture-mapper·convention-scout·test-pattern-analyzer를 Workflow 병렬/Task 분산/순차로 활용). 신규·빈 프로젝트면 프레임워크 표준 구조 채택. **날조 방지**: 용례 0건 자산은 시그니처만 직독, 구현됐으나 미적용 인프라는 "미적용/규약"으로 정직 표기.
 - **산출물** — 루트 `CLAUDE.md`(`templates/CLAUDE.template.md` 구조, "Beaver 설정" 블록 고정) + `docs/<topic>.md`(architecture·conventions·data-layer·error-handling·api·testing 중 쓰는 것만) + `.beaver/config.json`(stack·commands·paths·branch·self_heal_retry_limit). 모든 규칙에 출처(실측 경로 / "표준: 〈프레임워크〉 권장" / "선택: 사용자") 표기.
 - analyze 자체는 **브랜치를 만들거나 테스트를 실행하지 않는다** — 값을 config에 기록만 한다(stick 워크트리 생성·테스트 실행은 plan/build/ship).
@@ -136,7 +139,7 @@ refactor       # 독립 · 필요 시 (계획서 → 실행, 동작 보존)
 
 ## 사용자 규칙 메모리 (`.beaver/memory/`)
 
-작업 중 사용자가 규약을 교정하거나 선호를 표명하면("service 말고 repository에서만 UK/FK 핸들링" 등), 모든 단계가 이를 기억하고 우선 적용한다.
+작업 중 사용자가 규약을 교정하거나 선호를 표명하면(예: "이런 검증은 다른 데 말고 특정 단위에서만" — 프로젝트가 쓰는 구성요소로 표현된), 모든 단계가 이를 기억하고 우선 적용한다.
 
 - **저장(확인 후)** — 지속 규칙으로 판단되면 "memory에 저장할까?" 확인 → `.beaver/memory/<topic>.md`에 누적(+ `MEMORY.md` 인덱스). 일회성 지시나 코드로 알 수 있는 사실은 저장 안 함.
 - **우선순위** — `memory > CLAUDE.md > 프레임워크 기본`. 충돌하면 memory가 이긴다. **모든 단계가 진입 시 먼저 읽고** 적용한다(plan·build·refactor는 구현·통합 판단에, ship은 리뷰·reconcile·충돌 통합에).
@@ -159,23 +162,25 @@ refactor       # 독립 · 필요 시 (계획서 → 실행, 동작 보존)
 
 ## 다언어 동작 원리
 
-`/beaver:analyze`가 스택을 감지해 `.beaver/config.json`에 **테스트·빌드 커맨드와 경로 규약**을 기록한다. 이후 모든 단계·hook은 이 설정을 읽으므로 언어에 종속되지 않는다.
+`/beaver:analyze`가 스택을 감지해 `.beaver/config.json`에 **테스트·빌드 커맨드와 경로 규약**을 기록한다. 이후 모든 단계·hook은 이 설정을 읽으므로 언어·프레임워크에 종속되지 않는다.
 
 ```jsonc
 {
   "project_name": "...",
-  "stack": ["nestjs"],
+  "stack": ["..."],                                       // 감지된 스택 id
   "commands": {
-    "test": "npm test",                                   // 전체 회귀 (ship 병합 직전)
-    "test_one": "npm test -- --testPathPatterns=$NAME",   // 단일 기능 (build) — pytest면 "pytest -k $NAME" 등
-    "build": "npm run build",
-    "lint": "npm run lint"
+    "test": "...",                                        // 전체 회귀 (ship 병합 직전)
+    "test_one": "...",                                    // 단일 기능 (build) — $NAME 치환
+    "build": "...",
+    "lint": "..."
   },
-  "paths": { "source_root": "src", "test_glob": "**/*.spec.ts" },
+  "paths": { "source_root": "...", "test_glob": "..." },
   "branch": { "stick_prefix": "stick" },
   "self_heal_retry_limit": 5
 }
 ```
+
+위 값은 모두 이 프로젝트가 실제로 쓰는 것에서 도출된다: analyze가 스택 id, test/build/lint 커맨드, source root, test glob을 코드 근거(경로:라인)와 감지된 프레임워크의 관용 베이스라인에서 도출해 프로젝트가 표현하는 그대로 기록한다. `test_one`의 `$NAME`은 build 시 기능명으로 치환된다. 프로젝트에 근거가 없는 필드는 추측하지 않고 비운다.
 
 ---
 

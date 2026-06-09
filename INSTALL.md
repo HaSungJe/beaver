@@ -16,7 +16,7 @@ Install via the Claude Code plugin hub. After installation it works immediately,
 
 ### ⚠️ Behavior and Security Notice
 
-beaver's PostToolUse hook (`scripts/self-heal.js`) **runs the shell command listed in `commands.test_one` of `.beaver/config.json`** whenever a code/test file is saved (e.g. `npm test -- ...`, `pytest -k ...`). In other words, **this hook automatically runs the project test command you configured**. The `commands` values are detected and filled in by `/beaver:analyze`, are **always recorded only after user confirmation**, and can be reviewed and edited directly in `.beaver/config.json`. Do not put untrusted commands there. If Node is absent, the hook runs nothing (no-op).
+beaver's PostToolUse hook (`scripts/self-heal.js`) **runs the shell command listed in `commands.test_one` of `.beaver/config.json`** whenever a code/test file is saved (e.g. `npm test -- ...`, `pytest -k ...`). The `commands` values are detected and filled in by `/beaver:analyze`, are **always recorded only after user confirmation**, and can be reviewed and edited directly in `.beaver/config.json`. Do not put untrusted commands there. If Node is absent, the hook runs nothing (no-op).
 
 ---
 
