@@ -17,16 +17,17 @@ description: 기능을 기획해 문서(spec → plan, 변경이면 revision)를
 - 그 외 → **신규 모드**(spec → plan).
 애매하면 사용자 확인.
 
-## 2. 브랜치
-plan 시작 시 작업 브랜치(stick)를 자동 생성한다:
-- 현재 브랜치가 이미 `.beaver/.auto-branch-state.json` 키(= beaver stick)면 → 그대로 누적(새로 안 만듦).
-- 아니면 base = `branch.integration`(기본 `dam`, 로컬 전용 일회용 통합 브랜치):
-  - **가드**: `branch.integration` 값이 mainline/원격 추적 브랜치(`main`/`master`/`origin/*`)면 **중단** — config 오설정. integration은 일회용 로컬 dam 전용이고 mainline은 source여야 함을 알리고 `/beaver:analyze` 재실행 또는 config 수정(`integration: "dam"`)을 안내. (그대로 두면 ship이 mainline에 직접 발행하고 release가 mainline을 삭제한다.)
-  - **로컬 dam 있으면** → 질문 없이 dam에서 stick 분기.
-  - **로컬 dam 없으면** → **소스 브랜치를 묻는다**: 원격 추적 브랜치 목록 제시(기본 후보 = 감지된 mainline `main`/`master`). 선택한 브랜치(원격 있는)에서 dam 복제 생성(`git checkout -b <integration> origin/<src>`) → `.beaver/.dam-state.json`에 `{ "source": "<src>" }` 기록 → dam에서 stick 분기.
-- stick: `<stick_prefix>/<domain>-<rand6>`(기본 `stick/...`) 생성·체크아웃 → state에 `{"<stick>": "dam"}` 기록.
+## 2. 워크트리 진입 (stick 격리)
+plan 시작 시 stick을 `.claude/worktrees/`에 격리하고 세션을 그리로 옮긴다 — 현재 작업 디렉터리는 그대로 둔다(병렬 세션 가능).
 
-도메인은 기능명/요청에서 추출. 생성한 브랜치를 한 줄로 알린다. dam은 로컬 전용 — 원격에 push하지 않는다(원격 반영은 `/beaver:release`).
+- **이미 stick worktree 안이면**(현재 cwd가 `.claude/worktrees/<stick>` 이고 state에 키 존재) → 그대로 누적(새로 안 만듦).
+- 아니면:
+  1. `origin_branch = git branch --show-current` — ship이 되돌릴 대상. 빈값(detached)이면 중단하고 브랜치 체크아웃 안내.
+  2. stick 이름 = `<stick_prefix>/<domain>-<rand6>` (기본 `stick/...`). 도메인은 기능명/요청에서 추출.
+  3. `EnterWorktree(name=<stick>)` 호출 → CC가 `.claude/worktrees/<stick>` 생성 + 세션 cwd 전환(base=현재 HEAD, §0의 baseRef=head).
+  4. `.beaver/.auto-branch-state.json`에 `{ "<stick>": "<origin_branch>" }` 기록.
+
+생성한 worktree·stick·origin_branch를 한 줄로 알린다. stick·worktree 모두 로컬 전용 — 원격 push는 ship에서만.
 
 ## 3. 신규 모드
 **spec** — `${CLAUDE_PLUGIN_ROOT}/templates/spec.md` 기반 `.beaver/output/spec/<domain>/<feature>-spec.md`.
