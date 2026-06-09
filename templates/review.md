@@ -1,10 +1,10 @@
 # Review — {대상} — {YYMMDD}
 
-> dam 병합 전 코드 리뷰. 누적 변경분을 memory 규칙·CLAUDE.md 규약·plan/spec 의도 대비 점검.
-> 위치: `.beaver/output/review/` — ship은 `<stick>-review-<YYMMDD>.md`(stick = 브랜치명 `/`→`-`, ship 단위 1개), release는 `dam-release-<YYMMDD>.md`(dam 전체 단위 1개). 같은 날 재리뷰면 `-<N>`.
+> 병합 전 코드 리뷰. 누적 변경분을 memory 규칙·CLAUDE.md 규약·plan/spec 의도 대비 점검.
+> 위치: `.beaver/output/review/` — `<stick>-review-<YYMMDD>.md`(stick = 브랜치명 `/`→`-`, ship 단위 1개). 같은 날 재리뷰면 `-<N>`.
 
 ## 대상
-- stick: `{stick}` → base: `{base}`
+- stick: `{stick}` → origin: `{origin_branch}`
 - 포함 기능: {feature 목록}
 - 변경 범위: {파일 수 / diff 요약}
 

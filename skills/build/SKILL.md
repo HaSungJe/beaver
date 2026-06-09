@@ -24,7 +24,7 @@ plan/revision의 "테스트 케이스"를 **실제 테스트 코드로 먼저** 
 ## 3. 구현 → green
 `config.json` 경로 + `CLAUDE.md` 규약대로 plan/revision 설계를 구현해 테스트를 통과시킨다. 변경 모드는 "변경 후 스펙"만 반영, 제거 분기 정리.
 - 실패 시 분석·수정·재실행(최대 `self_heal_retry_limit`, 기본 5). `self-heal` 훅이 구현 파일 저장 시 자동 보조.
-- **이 작업에서 만든 테스트(`test_one`)만 확인한다.** 기존 테스트 전체 회귀는 build에서 돌리지 않음 — 원격에 반영되는 `/beaver:release` 직전에 1회 수행한다(stick에 여러 기능을 누적하므로 build마다 전체를 돌리는 낭비를 피함).
+- **이 작업에서 만든 테스트(`test_one`)만 확인한다.** 기존 테스트 전체 회귀는 build에서 돌리지 않음 — `/beaver:ship` 병합 직전에 1회 수행한다(stick에 여러 기능을 누적하므로 build마다 전체를 돌리는 낭비를 피함).
 - **draft 규약 동기화**: plan §4.5가 만든 draft 규약 문서(`beaver:draft` 마커)가 있고 구현이 설계와 틀어지면(self-heal·접근 변경 등) **그 문서를 실제 코드에 맞게 갱신**한다. 마커는 유지(확정은 ship). 코드↔규약 draft 항상 일치.
 
 ### 막힘 fallback (self-heal 한도 소진 시)

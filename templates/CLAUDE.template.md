@@ -20,16 +20,12 @@
 | 분석(1회) | `/beaver:analyze` | "코드베이스 분석" |
 | 기획 | `/beaver:plan <기능명>` | "<기능명> 기획", "기능 생성/수정" |
 | 구현 | `/beaver:build` | "작업 시작", "구현" |
-| 배포 | `/beaver:ship` | "커밋하고 dam 병합", "작업 마무리" |
-| 충돌 해결 | `/beaver:resolve` | "충돌 해결" (ship 병합 충돌 시 자동) |
-| 방류 | `/beaver:release` | "dam 방류", "메인에 반영" |
+| 배포 | `/beaver:ship` | "커밋하고 배포", "작업 마무리" |
 | 리팩토링 | `/beaver:refactor` | "비슷한 기능 묶기", "중복 정리" |
 
-**흐름**: 선택 소스 브랜치에서 복제한 `dam`(로컬 전용)에서 `stick`을 뻗어 `plan`→`build`(기획→구현)를 누적(build는 커밋 안 함) → `ship`이 커밋·코드리뷰·`dam` 로컬 병합(충돌 시 resolve 자동) → `release`가 dam을 소스 브랜치로 병합·푸쉬하고 로컬 dam 삭제. **stick·dam 모두 로컬 전용** — 원격엔 소스 브랜치(예: main)만 발행하며 release에서만 push한다.
+**흐름**: 작업하던 브랜치(main/develop 등)에서 `plan`이 `.claude/worktrees/`에 `stick`을 격리 생성하고 세션을 그리로 옮긴다 → `build`(TDD 구현, 커밋 안 함) 누적 → `ship`이 커밋·코드리뷰·전체회귀 후 원래 브랜치로 복귀·전진병합·push하고 worktree를 파기한다(병합 충돌은 ship이 인라인 해결). **stick·worktree는 로컬 전용** — push는 ship에서 원래 브랜치로만.
 **위치**: 설정 `.beaver/config.json` · 산출물 `.beaver/output/{spec,plan,revision,report,review,refactor}/` (spec/plan/revision/report는 `<domain>/` 하위, review는 stick 단위 flat, refactor는 주제 단위 flat) · 메모리 `.beaver/memory/`(인덱스 MEMORY.md, 코드로 알 수 있는 내용은 저장 안 함).
 **우선순위**: `.beaver/memory/` 의 사용자 규칙이 이 문서(CLAUDE.md)보다 **우선**한다. 작업 중 사용자 지적은 확인 후 memory에 누적되고, 필요 시 이 문서에도 반영된다(충돌 시 memory가 이김).
-
-<!-- 통합 브랜치(`branch.integration`)는 항상 로컬 전용 일회용 브랜치(기본 `dam`)다. mainline(main/master)을 integration 으로 쓰지 않는다 — mainline 은 dam 을 복제하는 source 일 뿐이며 `.beaver/.dam-state.json` 에 기록된다. (integration 이 mainline 이면 release 의 `git branch -d` 가 mainline 을 지운다.) -->
 
 ---
 

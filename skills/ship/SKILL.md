@@ -22,7 +22,7 @@ stick의 누적 변경분(base 대비 diff)을 **`.beaver/memory/` 규칙 + `CLA
 - `${CLAUDE_PLUGIN_ROOT}/templates/review.md` 기반 **`.beaver/output/review/<stick>-review-<YYMMDD>.md`** 작성. `<stick>`은 브랜치명의 `/`→`-`(예: `stick/user-a3f9c2`→`stick-user-a3f9c2`), 도메인 무관·ship 단위 1개. 같은 날 재리뷰면 `-<N>`.
 - 발견 항목을 심각도와 함께 보고 → 사용자 판단: 수정 필요하면 `/beaver:build`로 고친 뒤 재시도, 통과면 병합 진행. **승인 없이 병합으로 넘어가지 않는다.**
 
-## 2.5 전체 회귀 (병합 전, release에서 흡수)
+## 2.5 전체 회귀 (병합 전)
 원래 브랜치로 병합하기 전 stick worktree에서 `commands.test` **전체**를 1회 실행한다. build는 기능별 `test_one`만 보므로, 누적 기능 전체의 회귀를 여기서 처음 검증한다. **green이어야 §3 진행.** 실패 시 중단하고 원인 수정(`/beaver:build`) 후 재시도 — 깨진 채로 병합·push하지 않는다.
 
 ## 3. 복귀 + 전진 병합 + push + 파기

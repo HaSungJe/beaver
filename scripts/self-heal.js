@@ -4,7 +4,7 @@
 // When a spec/test file is saved -> run the project's single-test command for it.
 // While a retry is in progress and an implementation file is saved -> re-run.
 // On failure, increment .beaver/.retry-count and surface the error so Claude fixes it.
-// On unit pass, mark the feature done; full regression is deferred to release. Resets state.
+// On unit pass, mark the feature done; full regression is deferred to ship. Resets state.
 //
 // No-ops silently unless .beaver/config.json exists and the changed file looks like
 // source/test under the configured source_root. Requires Node on PATH.
@@ -70,7 +70,7 @@ if (unit.code !== 0) {
     : `[beaver] 마지막 시도입니다. 수정 후 저장하면 다시 실행됩니다.`);
   process.exit(1);
 }
-out('[beaver] ✅ 단위 테스트 통과 — 이 기능 구현 완료 (전체 회귀는 release에서)');
+out('[beaver] ✅ 단위 테스트 통과 — 이 기능 구현 완료 (전체 회귀는 ship에서)');
 cleanup();
 process.exit(0);
 

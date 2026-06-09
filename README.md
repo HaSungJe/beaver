@@ -1,15 +1,16 @@
 # 🦫 Beaver
 
-코드베이스를 먼저 분석해 프로젝트 규약 문서(`CLAUDE.md`)를 만들고, 그 규약을 단일 근거로 **분석 → 기획 → 개발 → 배포(로컬 병합) → 방류(원격 반영) → 충돌 해결 → 리팩토링**을 일관되게 수행하는 Claude Code 플러그인. 언어 무관 (NestJS · Spring · Python · Go · …).
+코드베이스를 먼저 분석해 프로젝트 규약 문서(`CLAUDE.md`)를 만들고, 그 규약을 단일 근거로 **분석 → 기획 → 개발 → 배포(원래 브랜치 병합·푸쉬) → 리팩토링**을 일관되게 수행하는 Claude Code 플러그인. 기획·구현은 `.claude/worktrees/`에 격리된 stick 워크트리에서 이뤄져 **여러 세션 병렬 작업**이 가능하다. 언어 무관 (NestJS · Spring · Python · Go · …).
 
 ## 기대 효과
 
 - **일관성** — 모든 산출물이 실제 코드에서 도출된 `CLAUDE.md` 규약을 따른다.
-- **표준 절차** — 기능마다 기획 → 개발 → 배포(ship)가 동일한 흐름으로 반복되고, 모인 작업을 방류(release)로 원격에 반영한다.
-- **회귀 방지** — 문서 구조 검증 + 테스트 자가수복(기본 5회, 막히면 plan으로 되먹임) + 병합 충돌 자동 해결. **테스트가 도는 곳**: build는 그 기능 테스트(`test_one`)만, **충돌 해결(resolve) 직후**·**release 푸쉬 직전**엔 전체 회귀(`commands.test`)로 — 속도와 안전망을 함께 챙긴다.
+- **표준 절차** — 기능마다 기획 → 개발 → 배포(ship)가 동일한 흐름으로 반복되고, ship이 원래 작업 브랜치로 직접 병합·푸쉬한다.
+- **병렬 작업** — stick을 `.claude/worktrees/`에 격리하므로(세션 cwd 전환), 세션마다 다른 기능을 동시에 진행해도 충돌하지 않는다.
+- **회귀 방지** — 문서 구조 검증 + 테스트 자가수복(기본 5회, 막히면 plan으로 되먹임) + 병합 충돌 인라인 해결. **테스트가 도는 곳**: build는 그 기능 테스트(`test_one`)만, **ship 병합 직전**엔 전체 회귀(`commands.test`)로 — 속도와 안전망을 함께 챙긴다.
 - **규칙 누적(memory)** — 작업 중 사용자 지적을 `.beaver/memory/` 에 누적해 이후 작업서 **최우선**(memory > CLAUDE.md > 기본) 적용. 같은 지적을 반복하지 않는다.
 - **다언어 지원** — 스택을 감지해 테스트·빌드 커맨드를 `.beaver/config.json` 에 기록하므로 언어에 비종속.
-- **검수 지점 확보** — spec→plan 게이트, ship·release의 코드 리뷰, 승인 기반 커밋·병합·방류로 매 단계 사람이 확인한다.
+- **검수 지점 확보** — plan 대화형 결정 게이트, ship의 코드 리뷰, 승인 기반 커밋·병합·푸쉬로 매 단계 사람이 확인한다.
 
 ---
 
@@ -39,11 +40,9 @@ Claude Code에서:
 | 묶음 | 단계 | 슬래시 | 자연어 예시 | 하는 일 |
 |---|---|---|---|---|
 | 분석 (독립·1회) | **분석** | `/beaver:analyze` | "코드베이스 분석해줘" | 코드 실측(없으면 프레임워크 표준)으로 `CLAUDE.md` + `docs/` 규약 + `.beaver/config.json` 생성·갱신, 기존 CLAUDE.md·memory 병합·반영 |
-| 기획·구현 | **기획** | `/beaver:plan <기능명>` | "<기능명> 기획해줘" | 신규/변경 자동 판별 → stick 브랜치 자동 생성 → 코드 스캔 제안 + 결정사항 담은 spec→plan(변경이면 revision) 작성(저장 시 검증 훅). 새 규약 영역이면 draft 문서 |
-| 기획·구현 | **개발** | `/beaver:build` | "작업 시작" | plan/revision을 TDD로 구현(테스트 red→구현 green) → **그 기능 `test_one`만** 자가수복(기본 5회, 막히면 plan 복귀) → report. 커밋·전체 회귀 안 함 |
-| 배포 | **배포** | `/beaver:ship` | "커밋하고 dam에 병합" | stick 누적분 승인 커밋 → 코드 리뷰(memory·규약·의도·draft 확정, review 문서) → **로컬 dam 병합(push 없음)**. 충돌 시 resolve 자동 |
-| 배포 | **충돌 해결** | `/beaver:resolve` | "충돌 해결해줘" | ours/theirs 의도를 memory·규약대로 통합 → 마커 정리 → **전체 테스트(`commands.test`) 회귀 확인** → 승인 후 마무리. ship·release 충돌 시 자동 |
-| 배포 | **방류** | `/beaver:release` | "dam 방류", "메인에 반영" | dam 누적분 전체 코드 리뷰 → 소스 브랜치 병합 → **전체 회귀 green** → 소스만 push → 로컬 dam 삭제. 승인 기반 |
+| 기획·구현 | **기획** | `/beaver:plan <기능명>` | "<기능명> 기획해줘" | 신규/변경 자동 판별 → stick 워크트리 격리 생성·진입 → 코드베이스 병렬 심층분석(신규/추가 판별, 신규면 기술검토) → 대화형 1문1답으로 결정 → spec 자동생성 + plan(변경이면 revision) 작성(저장 시 검증 훅). 새 규약 영역이면 draft 문서 |
+| 기획·구현 | **개발** | `/beaver:build` | "작업 시작" | 준비 병렬 fan-out → plan/revision을 TDD로 구현(테스트 red→구현 green, 순차) → **그 기능 `test_one`만** 자가수복(기본 5회, 막히면 plan 복귀) → report. 커밋·전체 회귀 안 함 |
+| 배포 | **배포** | `/beaver:ship` | "커밋하고 배포" | stick 누적분 승인 커밋 → 코드 리뷰(memory·규약·의도·draft 확정, review 문서) → **전체 회귀** → 원래 브랜치 복귀·전진병합·push → worktree 파기. 충돌 시 인라인 해결 |
 | 리팩토링 (독립) | **리팩토링** | `/beaver:refactor` | "비슷한 기능 묶어줘" | green baseline 확인 → 대상 식별 → 계획서 작성·승인 → 작은 단위 추출·교체·정리 + 단계별 테스트 → 전체 회귀로 동작 보존 입증. 커밋은 ship |
 
 > 명칭은 안정화 전(0.x)이라 바뀔 수 있다.
@@ -55,19 +54,17 @@ Claude Code에서:
 ```
 analyze        # 독립 · 프로젝트당 1회 (규약 문서 생성)
 
-plan → build   # 한 세트 · stick 브랜치에서 기능마다 반복 (커밋 안 하고 누적)
-               #   plan: dam 없으면 소스 브랜치 묻고 dam 복제 → dam에서 stick 분기
+plan → build   # 한 세트 · stick 워크트리에서 기능마다 반복 (커밋 안 하고 누적)
+               #   plan: 현재 브랜치 HEAD에서 .claude/worktrees/<stick> 격리 생성 + 세션 진입
 
-ship           # 한 세트 · 커밋 → 코드리뷰 → dam 로컬 병합 (stick·dam 모두 로컬 전용, push 없음)
- └ resolve      #   충돌 시 자동 — 규약대로 통합 → 전체 테스트로 회귀 확인
-
-release        # dam → 선택 소스 브랜치 병합 → 전체 회귀 → 푸쉬 → 로컬 dam 삭제
- └ resolve      #   충돌 시 자동 — 규약대로 통합 → 전체 테스트로 회귀 확인
+ship           # 한 세트 · 커밋 → 코드리뷰 → 전체회귀 → ExitWorktree 복귀
+               #   → 원래 브랜치 전진병합 → push → worktree 파기
+ └ 충돌 인라인   #   병합 충돌 시 ship이 직접 — 규약대로 통합 → 테스트 회귀 확인
 
 refactor       # 독립 · 필요 시 (계획서 → 실행, 동작 보존)
 ```
 
-> **브랜치 모델**: 선택한 원격 브랜치(예 `main`)에서 통합 브랜치 `dam`(로컬 전용)을 복제하고, 그 dam에서 작업 브랜치 `stick/<domain>-<rand6>`를 뻗는다. ship이 stick을 dam에 병합(로컬), release가 dam을 다시 소스 브랜치로 병합·푸쉬한 뒤 로컬 dam을 삭제한다. **stick·dam 모두 로컬 전용 — 원격엔 소스 브랜치(예 main)만 발행하고 release에서만 push한다.** 이름·접두사는 `.beaver/config.json` 의 `branch.integration`(기본 `dam`)·`branch.stick_prefix`(기본 `stick`)로 변경 가능. dam의 소스는 `.beaver/.dam-state.json`, stick→base 매핑은 `.beaver/.auto-branch-state.json`에 기록된다.
+> **브랜치 모델**: 작업하던 브랜치(예 `main`/`develop`)의 현재 HEAD에서 작업 브랜치 `stick/<domain>-<rand6>`를 뻗어 `.claude/worktrees/<stick>`에 격리한다(CC `EnterWorktree`, `worktree.baseRef=head`). ship이 stick을 원래 브랜치로 전진병합·푸쉬한 뒤 worktree와 stick을 파기한다. **stick·worktree는 로컬 전용 — push는 ship이 원래 브랜치로만 한다.** stick 접두사는 `.beaver/config.json` 의 `branch.stick_prefix`(기본 `stick`)로 변경 가능. stick→원래 브랜치 매핑은 `.beaver/.auto-branch-state.json`에 기록된다. 세션마다 다른 워크트리라 **병렬 작업**이 가능하다.
 
 ---
 
@@ -84,14 +81,14 @@ refactor       # 독립 · 필요 시 (계획서 → 실행, 동작 보존)
 - **스택 감지** — 매니페스트(`package.json`/`pom.xml`/`build.gradle`/`pyproject.toml`/`go.mod`/`Cargo.toml`)로 프레임워크·test/build 커맨드 식별(사용자 확인). 코드로 안 정해지는 결정 포인트(ORM·auth·캐시 등)는 대안이 2개 이상일 때만 권장안과 함께 질문.
 - **분석** — 기존 코드면 대표 파일을 읽어 근거(경로:라인)로 규칙 추출(`agents/`의 architecture-mapper·convention-scout·test-pattern-analyzer를 Workflow 병렬/Task 분산/순차로 활용). 신규·빈 프로젝트면 프레임워크 표준 구조 채택. **날조 방지**: 용례 0건 자산은 시그니처만 직독, 구현됐으나 미적용 인프라는 "미적용/규약"으로 정직 표기.
 - **산출물** — 루트 `CLAUDE.md`(`templates/CLAUDE.template.md` 구조, "Beaver 설정" 블록 고정) + `docs/<topic>.md`(architecture·conventions·data-layer·error-handling·api·testing 중 쓰는 것만) + `.beaver/config.json`(stack·commands·paths·branch·self_heal_retry_limit). 모든 규칙에 출처(실측 경로 / "표준: 〈프레임워크〉 권장" / "선택: 사용자") 표기.
-- analyze 자체는 **브랜치를 만들거나 테스트를 실행하지 않는다** — 값을 config에 기록만 한다(dam/stick 생성·테스트 실행은 plan/build/ship/release).
+- analyze 자체는 **브랜치를 만들거나 테스트를 실행하지 않는다** — 값을 config에 기록만 한다(stick 워크트리 생성·테스트 실행은 plan/build/ship).
 
 ### 📝 `/beaver:plan <기능명>` — 기획 (spec → plan / revision)
 
 - **전제** — `CLAUDE.md`가 없으면 중단하고 analyze 안내. `.beaver/config.json`·`.beaver/memory/`를 읽는다.
 - **모드 판별** — 같은 기능에 `plan.md`+`report.md`가 이미 있으면 **변경(revision)**, 아니면 **신규(spec→plan)**.
-- **stick 브랜치 자동 생성** — 현재 브랜치가 이미 stick이면 누적, 아니면 base(`branch.integration`=dam)에서 `stick/<domain>-<rand6>` 분기. **로컬 dam이 없으면 소스 브랜치를 물어** `git checkout -b dam origin/<src>`로 복제하고 `.beaver/.dam-state.json`에 source 기록. (가드: `integration`이 mainline이면 오설정으로 중단.)
-- **신규 — spec** — 작성 전 **연관 기존 코드를 스캔**(DB/모델·인접 기능·재사용 util·패턴)해 근거(경로:라인) 기반 **제안**을 만든다. `templates/spec.md`로 `.beaver/output/spec/<domain>/<feature>-spec.md` 작성(기능·API·비즈니스 규칙·참고 + 제안 + 확정 설계 결정사항 `- [ ]`). 사용자가 제안 검토·결정사항 답변 후 plan 지시.
+- **stick 워크트리 자동 생성** — 현재 stick 워크트리 안이면 누적, 아니면 `origin_branch = git branch --show-current` 기록 후 `EnterWorktree(name=stick/<domain>-<rand6>)`로 현재 HEAD에서 `.claude/worktrees/<stick>` 격리 생성·진입(`worktree.baseRef=head` 자동 설치). `.beaver/.auto-branch-state.json`에 `{stick: origin_branch}` 기록.
+- **신규 — 심층분석·대화·spec** — 작성 전 **코드베이스를 병렬 심층분석**(`agents/`의 architecture-mapper·convention-scout·test-pattern-analyzer + 재사용/인접 스캔을 Workflow fan-out으로). 결과로 "기존 패턴 추가 vs 신규 기능"을 판별하고, 신규 특수기능이면 구현 기술검토·제안을 더한다. 근거(경로:라인) 기반 제안 + 설계 접근 2-3안(권장)을 **대화형 1문1답**으로 확정 → `templates/spec.md`로 `.beaver/output/spec/<domain>/<feature>-spec.md` **자동 생성**(기능·API·비즈니스 규칙·참고 + 제안 + 확정된 결정사항·근거). 미답 결정사항 없어야 plan 진행.
 - **신규 — plan** — 미답 있으면 중단. `templates/plan.md`로 `.beaver/output/plan/<domain>/<feature>-plan.md` 작성(파일 목록·레이어별 설계·테스트 케이스·응답 코드 + 사전 구현 필요 항목 `- [ ]`).
 - **변경 — revision** — `templates/revision.md`로 `.beaver/output/revision/<domain>/<feature>-revision-<YYMMDD>-<N>.md`. 원본 spec/plan은 참조만.
 - **저장 시 검증 훅** — 문서를 저장하면 `on-doc-written.js`가 자동으로 필수 섹션을 검사(누락 시 차단, 미답 결정사항·미완 사전항목은 경고).
@@ -100,48 +97,31 @@ refactor       # 독립 · 필요 시 (계획서 → 실행, 동작 보존)
 
 ### 🔨 `/beaver:build` — 구현 (TDD) · *커밋 안 함*
 
-- **memory 우선** — 진입 시 memory를 읽어 구현 내내 최우선 적용. 구현 중 사용자 지적은 확인 후 `.beaver/memory/`에 저장(정식 CLAUDE.md 반영은 ship/release로 미룸).
+- **memory 우선** — 진입 시 memory를 읽어 구현 내내 최우선 적용. 구현 중 사용자 지적은 확인 후 `.beaver/memory/`에 저장(정식 CLAUDE.md 반영은 ship으로 미룸).
 - **모드·대상** — 인자 있으면 변경(`revision-*.md` 미추기) 우선→신규(`plan.md` 있고 `report.md` 없음). 인자 없으면 `.beaver/output/`를 스캔해 0개 중단·1개 진행·2개+ 선택(자동 N건 금지).
 - **전제 게이트** — 신규는 `plan.md` 존재·결정사항 미답 없음·사전 구현 항목 전부 `[x]`·`validate-plan.js` 통과(필수 섹션·미답·미완 항목 있으면 차단). 변경은 최신 `revision-*.md`·미답 없음·사전항목 `[x]`.
-- **① 테스트 먼저(red)** — plan의 "테스트 케이스"를 CLAUDE.md testing 강도의 실제 테스트로 **먼저** 작성하고 `test_one`(`$NAME` 치환)으로 의도된 실패를 확인. 저장 시 `self-heal.js` 훅이 자동 발동(`.beaver/.retry-count`/`.current-spec` 상태로 루프 보조).
-- **② 구현(green)** — 규약대로 구현해 통과시킨다. 실패 시 분석·수정·재실행(최대 `self_heal_retry_limit`, 기본 5).
-- **그 기능 `test_one`만 확인** — 기존 테스트 **전체 회귀(`commands.test`)는 build에서 돌리지 않는다.** stick에 여러 기능을 누적하므로, 전체 회귀는 원격에 반영되는 release 직전 1회로 미룬다.
+- **① 준비(병렬)** — 구현 전 plan/revision 분석·건드릴 기존코드 매핑·테스트케이스 구체화·재사용 파악을 Workflow fan-out으로 빠르게 끝낸다. 구현 자체(②~)는 순차 TDD.
+- **② 테스트 먼저(red)** — plan의 "테스트 케이스"를 CLAUDE.md testing 강도의 실제 테스트로 **먼저** 작성하고 `test_one`(`$NAME` 치환)으로 의도된 실패를 확인. 저장 시 `self-heal.js` 훅이 자동 발동(`.beaver/.retry-count`/`.current-spec` 상태로 루프 보조).
+- **③ 구현(green)** — 규약대로 구현해 통과시킨다. 실패 시 분석·수정·재실행(최대 `self_heal_retry_limit`, 기본 5).
+- **그 기능 `test_one`만 확인** — 기존 테스트 **전체 회귀(`commands.test`)는 build에서 돌리지 않는다.** stick에 여러 기능을 누적하므로, 전체 회귀는 ship 병합 직전 1회로 미룬다.
 - **draft 동기화** — draft 규약 문서가 코드와 틀어지면 코드에 맞춰 갱신(마커는 유지, 확정은 ship).
 - **막힘 fallback** — self-heal이 5회 헛돌면 build를 성공으로 끝내지 않고 → 근본원인 격리 → **plan으로 복귀**해 접근 재검토 → plan/revision 갱신 → build 재진입.
 - **리포트** — `templates/report.md`로 신규는 `report/<domain>/<feature>-report.md` 생성, 변경은 끝에 `## 수정 - <YYMMDD>-<N>` 추기.
 - **완료 전 검증** — 테스트 통과만이 아니라 plan/spec 의도대로 동작하는지 확인 후 보고. build는 **커밋하지 않고** stick에 누적.
 
-### 🚀 `/beaver:ship` — 커밋 + dam 로컬 병합
+### 🚀 `/beaver:ship` — 커밋 + 원래 브랜치 병합·푸쉬 + worktree 파기
 
-- **전제** — 완료 report 또는 변경분이 있어야 함.
+- **전제** — stick 워크트리 안(`.beaver/.auto-branch-state.json`에 현재 stick 키 존재) + 완료 report 또는 변경분.
 - **① 커밋** — `git status`/`diff` 확인 → 여러 기능이면 논리 단위 커밋 분리 제안 → 메시지 자동 생성 → **승인 후** 커밋.
-- **② 코드 리뷰(dam 병합 전)** — stick의 base 대비 diff를 **memory 규칙 → CLAUDE.md 규약 → plan/spec 의도** 순으로 자가 리뷰:
+- **② 코드 리뷰(병합 전)** — stick의 base 대비 diff를 **memory 규칙 → CLAUDE.md 규약 → plan/spec 의도** 순으로 자가 리뷰:
   - 규약 위반 점검(네이밍·구조·공통 로직 분리·에러·응답·테스트 강도)
   - **memory reconcile** — 미반영 memory 규칙을 CLAUDE.md/docs에 정식 반영 제안
   - **의도 동작 확인** — 누락·오구현 점검
   - **draft 규약 확정** — `<!-- beaver:draft -->` 문서가 코드와 일치하는지 검증 후 마커 제거·확정
   - 결과를 `templates/review.md`로 `.beaver/output/review/<stick>-review-<YYMMDD>.md`에 기록 → 발견 항목 보고 → "수정 필요"면 build로, "통과"면 병합(승인 없이 병합 금지).
-- **③ 병합** — **base(dam)를 체크아웃하지 않는다**(stick이 새 스키마면 dam 체크아웃이 DB 자동싱크로 컬럼 데이터를 날릴 수 있음). stick 위에 선 채 `git merge dam`(보통 no-op/FF, pull/push 없음) → `git branch -f dam stick`로 dam ref 전진 → `git checkout dam`(트리 무변동→싱크 안 터짐) → `git branch -d <stick>` + state 키 제거. **충돌 시 resolve 절차 자동 수행.**
-- **원격 push 없음** — stick·dam 모두 로컬 전용. 로컬 dam이 없으면 중단하고 plan 안내. 원격 발행은 release만.
-- 전체 회귀(`commands.test`)는 ship이 직접 돌리지 않는다(충돌 해결 경로에서만 부수적).
-
-### 🧩 `/beaver:resolve` — 병합 충돌 해결
-
-- **발동** — ship·release의 dam 병합 충돌 시 **자동**, 그 밖의 수동 충돌(rebase/pull/cherry-pick)은 직접 호출.
-- **① memory 먼저** — 통합 판단에 memory를 최우선 적용.
-- **② 충돌 식별** — `git status`로 충돌 파일·작업 종류 확인, 마커 구간에서 ours/theirs 의도 파악(필요시 양쪽 로그).
-- **③ 해결안** — 한쪽 명백 우위면 채택 / 양쪽 유효면 `CLAUDE.md`·memory 규약대로 통합(임의 폐기 금지) / 불확실·비즈니스 판단 필요면 사용자 선택.
-- **④ 정리·검증** — 마커 제거 → `git diff --check` → `git add` → **전체 회귀 `commands.test`로 회귀 확인**(build의 `test_one`이 아니라 누적 전체).
-- **⑤ 마무리** — 파일별 통합 내용 보고·승인 → merge면 커밋, rebase/cherry-pick이면 `--continue`(위험하면 `--abort` 제시). **마커 제거가 끝이 아니라 컴파일·테스트 통과까지가 해결.**
-
-### 🌊 `/beaver:release` — dam 방류 (소스 병합 + dam 삭제)
-
-- **전제** — 로컬 dam 존재 + 대상 브랜치 대비 변경분 존재(없으면 중단).
-- **① 전체 코드 리뷰** — dam 누적 diff를 memory·CLAUDE.md·의도 대비 리뷰(ship과 동일 강도) + memory reconcile, 결과를 `.beaver/output/review/dam-release-<YYMMDD>.md`에 기록 → 승인 게이트.
-- **② 대상 브랜치 선택** — `.beaver/.dam-state.json`의 source를 기본값으로(없으면 감지된 mainline), `git branch -a` 목록과 함께 변경 허용. 대상이 dam 자신이면 거부.
-- **③ 병합 + 전체 회귀** — **대상을 체크아웃하지 않는다**(옛 스키마 체크아웃이 DB 자동싱크를 유발해 컬럼 데이터를 날릴 수 있음). dam 위에 선 채 `git fetch origin <대상>` → `git merge origin/<대상>`(대상 신규 커밋을 dam으로, 충돌 시 resolve 자동) → **전체 회귀 `commands.test`를 dam에서 실행, green이어야 진행**(red면 중단·build 수정 후 재시도, 깨진 채 발행 금지). build가 기능별 `test_one`만 보므로 **누적 전체 회귀를 여기서 처음 일괄 검증**한다.
-- **④ 푸쉬** — `git push origin dam:<대상>`(FF, 대상 체크아웃 0회; 첫 발행 `-u`). dam은 자기 이름으론 절대 push 안 함.
-- **⑤ dam 삭제** — `git checkout -B <대상> dam`(트리 무변동→싱크 안 터짐)으로 dam에서 벗어난 뒤 `git branch -d dam`(병합됐으니 안전 삭제) + `.beaver/.dam-state.json` 제거(다음 plan이 소스를 다시 묻도록).
+- **③ 전체 회귀** — stick 워크트리에서 `commands.test` 전체 1회. green이어야 진행(누적 전체 회귀를 여기서 처음 검증).
+- **④ 복귀 + 전진 병합 + push + 파기** — stick 워크트리는 항상 최신 스키마, 원래 브랜치로 **전진** 병합만 하므로 옛 스키마 체크아웃 위험 없음. `ExitWorktree`로 원래 디렉터리(`origin_branch`) 복귀 → `git fetch origin <origin_branch>` → `git merge origin/<origin_branch>`로 최신 편입 → `git merge <stick>`로 전진 병합(충돌 시 ship이 인라인 해결) → `git push origin <origin_branch>` → `git worktree remove .claude/worktrees/<stick>` + `git branch -d <stick>` + state 키 제거.
+- **충돌 인라인 해결** — 병합 충돌 시 별도 스킬 없이 ship이 직접: ours/theirs 의도 파악 → memory·CLAUDE.md 규약대로 통합(임의 폐기 금지) → `git diff --check` 마커 정리 → `test_one`(가능하면 관련 회귀) → 승인 후 머지 커밋(위험하면 `git merge --abort`).
 
 ### ♻️ `/beaver:refactor` — 계획 기반 구조 정리 (독립)
 
@@ -159,8 +139,8 @@ refactor       # 독립 · 필요 시 (계획서 → 실행, 동작 보존)
 작업 중 사용자가 규약을 교정하거나 선호를 표명하면("service 말고 repository에서만 UK/FK 핸들링" 등), 모든 단계가 이를 기억하고 우선 적용한다.
 
 - **저장(확인 후)** — 지속 규칙으로 판단되면 "memory에 저장할까?" 확인 → `.beaver/memory/<topic>.md`에 누적(+ `MEMORY.md` 인덱스). 일회성 지시나 코드로 알 수 있는 사실은 저장 안 함.
-- **우선순위** — `memory > CLAUDE.md > 프레임워크 기본`. 충돌하면 memory가 이긴다. **모든 단계가 진입 시 먼저 읽고** 적용한다(plan·build·refactor·resolve는 구현·통합 판단에, ship·release는 리뷰·reconcile에).
-- **정식 반영(reconcile)** — ship·release 코드 리뷰 / analyze 재생성 시, 아직 규약 문서에 없는 memory 규칙을 `CLAUDE.md`/`docs/`에 반영할지 제안한다. 코드외 순수 선호는 memory에만 영속.
+- **우선순위** — `memory > CLAUDE.md > 프레임워크 기본`. 충돌하면 memory가 이긴다. **모든 단계가 진입 시 먼저 읽고** 적용한다(plan·build·refactor는 구현·통합 판단에, ship은 리뷰·reconcile·충돌 통합에).
+- **정식 반영(reconcile)** — ship 코드 리뷰 / analyze 재생성 시, 아직 규약 문서에 없는 memory 규칙을 `CLAUDE.md`/`docs/`에 반영할지 제안한다. 코드외 순수 선호는 memory에만 영속.
 
 > 프로토콜 전문: `${CLAUDE_PLUGIN_ROOT}/templates/memory-protocol.md` (저장소 구조 · 엔트리 포맷 · capture/read/reconcile).
 
@@ -186,13 +166,13 @@ refactor       # 독립 · 필요 시 (계획서 → 실행, 동작 보존)
   "project_name": "...",
   "stack": ["nestjs"],
   "commands": {
-    "test": "npm test",                                   // 전체 회귀 (resolve·release)
+    "test": "npm test",                                   // 전체 회귀 (ship 병합 직전)
     "test_one": "npm test -- --testPathPatterns=$NAME",   // 단일 기능 (build) — pytest면 "pytest -k $NAME" 등
     "build": "npm run build",
     "lint": "npm run lint"
   },
   "paths": { "source_root": "src", "test_glob": "**/*.spec.ts" },
-  "branch": { "integration": "dam", "stick_prefix": "stick" },
+  "branch": { "stick_prefix": "stick" },
   "self_heal_retry_limit": 5
 }
 ```
@@ -216,8 +196,8 @@ beaver/
 │   └── self-heal.js         #   훅: test_one 자동 실행·자가수복
 ├── agents/                  # analyze가 실측 시 fan-out (tools: Glob/Grep/Read)
 │   ├── architecture-mapper.md  ·  convention-scout.md  ·  test-pattern-analyzer.md
-├── skills/                  # 7개 skill (슬래시 + 자동발동)
-│   ├── analyze/  plan/  build/  ship/  resolve/  release/  refactor/
+├── skills/                  # 5개 skill (슬래시 + 자동발동)
+│   ├── analyze/  plan/  build/  ship/  refactor/
 └── templates/               # 규약·산출물 양식 (skill이 ${CLAUDE_PLUGIN_ROOT}/templates/* 로 참조)
     ├── CLAUDE.template.md    #   CLAUDE.md 규약 템플릿 (Beaver 설정 블록 + 섹션 가이드)
     ├── memory-protocol.md    #   사용자 규칙 memory 프로토콜
@@ -225,7 +205,7 @@ beaver/
     └── spec · plan · revision · report · review · refactor-plan 양식
 ```
 
-> **런타임 산출물**은 사용자 프로젝트에 생성된다(플러그인 저장소엔 없음): 루트 `CLAUDE.md`·`docs/`, 그리고 `.beaver/` 아래 `config.json` · `output/{spec,plan,revision,report,review,refactor}/` · `memory/`(사용자 규칙) · 상태 dotfile(`.dam-state.json`·`.auto-branch-state.json`·`.retry-count`·`.current-spec`).
+> **런타임 산출물**은 사용자 프로젝트에 생성된다(플러그인 저장소엔 없음): 루트 `CLAUDE.md`·`docs/`, 그리고 `.beaver/` 아래 `config.json` · `output/{spec,plan,revision,report,review,refactor}/` · `memory/`(사용자 규칙) · 상태 dotfile(`.auto-branch-state.json`·`.retry-count`·`.current-spec`) · stick 워크트리(`.claude/worktrees/`).
 
 ## License
 

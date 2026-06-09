@@ -1,7 +1,7 @@
 {
   "name": "beaver",
   "displayName": "Beaver",
-  "description": "Codebase-aware build companion — analyze your codebase into a convention spec, then plan, build (TDD), ship, and release, with automatic merge-conflict resolution and refactoring. Language-agnostic (NestJS, Spring, Python, ...).",
+  "description": "Codebase-aware build companion — analyze your codebase into a convention spec, then plan, build (TDD), and ship to your working branch via isolated worktrees, with inline merge-conflict resolution and refactoring. Language-agnostic (NestJS, Spring, Python, ...).",
   "version": "0.1.11",
   "author": {
     "name": "HaSungJe",
