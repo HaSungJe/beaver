@@ -9,6 +9,7 @@ description: 기능을 기획해 문서(spec → plan, 변경이면 revision)를
 - `CLAUDE.md` 필요. 없으면 중단하고 `/beaver:analyze` 안내.
 - `.beaver/config.json`에서 경로·`branch` 설정을 읽는다.
 - **memory 먼저 읽기**: `.beaver/memory/`(MEMORY.md + 관련 토픽)를 읽어 기획에 **최우선** 반영(memory > CLAUDE.md). 기획 중 사용자가 지속 규칙을 지적하면 확인 후 저장 — 프로토콜 `${CLAUDE_PLUGIN_ROOT}/templates/memory-protocol.md`.
+- **워크트리 설정 보장**: `.claude/settings.json`에 `worktree.baseRef`가 `"head"`인지 확인하고, 없거나 다르면 `"head"`로 설정(merge-patch, 다른 키 보존). 이래야 EnterWorktree가 현재 체크아웃 HEAD에서 stick을 분기한다(기본값 `fresh`는 origin/기본브랜치라 develop 등 누락).
 
 ## 1. 모드 판별
 대상 기능명으로:
