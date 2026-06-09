@@ -18,6 +18,15 @@ build는 **커밋하지 않는다** — 구현·테스트만 하고 stick 브랜
 - **신규**: `plan.md` 존재 / spec 결정사항 미답 없음 / 사전 구현 항목 전부 `[x]` / `node ${CLAUDE_PLUGIN_ROOT}/scripts/validate-plan.js <path>` 통과.
 - **변경**: 최신 `revision-*.md` 존재 / 결정사항 미답 없음 / 사전 구현 항목 `[x]`.
 
+## 1.5 준비 (병렬 fan-out, 속도)
+구현 전 준비 작업을 병렬로 빠르게 끝낸다(오케스트레이션: `Workflow→병렬 / Task→분산`, 병렬 우선) — 구현 자체는 §2~3에서 **순차 TDD**로 한다(병렬화하지 않는다):
+- plan/revision 분석(파일목록·레이어·테스트케이스 정독)
+- 건드릴 기존 코드 매핑(경로:라인)
+- 테스트 케이스 구체화(CLAUDE.md testing 강도)
+- 재사용 가능한 util/서비스 파악
+
+산출은 §2(red)·§3(green)의 입력으로 쓴다. 준비는 병렬, 구현은 순차 — TDD red→green 규율 보존.
+
 ## 2. 테스트 먼저 (red)
 plan/revision의 "테스트 케이스"를 **실제 테스트 코드로 먼저** 작성 — CLAUDE.md testing 규약 강도로(상태코드만 검증 금지). `commands.test_one`(`$NAME` 치환) 실행해 **의도대로 실패(red)** 하는지 확인(아직 구현 없음 → 실패가 정상). 컴파일이 막히면 시그니처/stub만 두어 red 상태를 확보. *테스트 저장 시 `self-heal` 훅이 자동 실행 — 첫 red는 정상이며, 이어서 구현으로 green을 만든다.*
 
