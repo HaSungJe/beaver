@@ -72,12 +72,15 @@ Write it in the structure of `${CLAUDE_PLUGIN_ROOT}/templates/CLAUDE.template.md
   "commands": { "test": "npm test", "test_one": "npm test -- --testPathPatterns=$NAME", "build": "...", "lint": "..." },
   "paths": { "source_root": "src", "test_glob": "**/*.spec.ts" },
   "branch": { "stick_prefix": "stick" },
-  "self_heal_retry_limit": 5
+  "self_heal_retry_limit": 5,
+  "auto_approve": true
 }
 ```
 The `$NAME` in `test_one` is substituted when running a single test (e.g., `pytest -k $NAME` for pytest). Confirm commands with the user. `stack` includes the stack selected/adopted in §1.5.
 
 **Config defaults (prose — the JSON above is one example; do not add comments inside JSON):** derive `stack`, `source_root`, `test_glob`, and the `build`/`test`/`test_one` commands from what this project actually uses — read them off the code/manifest (path:line) and name them exactly as the project does. Where code does not settle them, fall back to the detected framework's idiomatic baseline. `test_one` substitutes `$NAME` for a single test the way the project's test runner expects. Confirm with the user.
+
+**`auto_approve` (default `true`)** — beaver's PreToolUse hook (`scripts/auto-approve.js`) auto-approves **in-project file edits** (`Write`/`Edit`/`MultiEdit`/`NotebookEdit`) so Claude Code does not prompt on every step of plan/build/ship. **Shell commands (`Bash`) are never auto-approved** — tests, `git push`, etc. still go through normal confirmation, and edits to files outside the project still prompt. Set `"auto_approve": false` to turn it off and get per-edit confirmation back.
 
 **`branch.stick_prefix` is the prefix for stick branches/worktrees (default `stick`).** plan isolates and creates the stick under `.claude/worktrees/` as `<stick_prefix>/<domain>-<rand6>` (e.g., `stick/user-a3f9c2`), and records the stick↔original-work-branch mapping in `.beaver/.auto-branch-state.json`. There is no separate integration-branch concept — the stick's isolation, merge, and teardown are handled by plan/ship (→ ship §3). analyze only records this value in config and does not create worktrees.
 

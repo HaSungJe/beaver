@@ -155,6 +155,7 @@ refactor       # 독립 · 필요 시 (계획서 → 실행, 동작 보존)
 - **자동 검증 hook** (`hooks/hooks.json`, PostToolUse `Write|Edit`) —
   - `on-doc-written.js`: plan/spec/revision 문서 저장 시 구조 검증(필수 섹션 누락 차단).
   - `self-heal.js`: 구현/테스트 파일 저장 시 `.beaver/config.json`의 `commands.test_one` **셸 명령을 실행**해 테스트 자동 실행·자가수복(최대 5회). hook이 프로젝트 테스트 커맨드를 실행하므로 신뢰하는 설정에서만 사용 — 자세한 고지는 [INSTALL.md](./INSTALL.md)의 "동작·보안 고지". **Node가 없으면 두 훅 모두 no-op**, skill의 수동 테스트 흐름으로 대체.
+- **자동승인 훅** (`auto-approve.js`, PreToolUse, **기본 on**) — 프로젝트 내 파일 편집(`Write`/`Edit`/`MultiEdit`/`NotebookEdit`)을 자동 승인해 plan/build/ship 매 단계마다 Claude Code 승인창이 안 뜬다. **셸 명령(`Bash`)은 절대 자동승인 안 함** — 테스트·`git push` 등은 여전히 확인, 프로젝트 밖 편집도 마찬가지. `.beaver/config.json`에 `"auto_approve": false`면 매 편집 확인으로 복귀.
 - **승인 게이트** — 커밋·병합·푸쉬·충돌 해결·리뷰 통과는 항상 사용자 확인 후에만 실행.
 - **규칙 메모리** — `.beaver/memory/`의 사용자 규칙이 `CLAUDE.md`보다 우선(위 참고).
 
@@ -192,13 +193,14 @@ beaver/
 │   ├── plugin.json          # 플러그인 매니페스트 (name·version·메타)
 │   └── marketplace.json     # 허브 배포 매니페스트 (/plugin marketplace add 가 읽음)
 ├── README.md  ·  INSTALL.md  ·  LICENSE
-├── hooks/hooks.json         # PostToolUse Write|Edit → on-doc-written.js + self-heal.js
+├── hooks/hooks.json         # PreToolUse → auto-approve.js · PostToolUse Write|Edit → on-doc-written.js + self-heal.js
 ├── scripts/                 # Node CommonJS, 의존성 0, 크로스플랫폼
 │   ├── _beaver.js           #   공유 헬퍼 (config 로드·경로)
 │   ├── validate-lib.js      #   문서 구조 검증 라이브러리
 │   ├── validate-plan.js     #   build 진입 게이트 CLI
 │   ├── on-doc-written.js    #   훅: plan/spec/revision 문서 구조 검증
-│   └── self-heal.js         #   훅: test_one 자동 실행·자가수복
+│   ├── self-heal.js         #   훅: test_one 자동 실행·자가수복
+│   └── auto-approve.js      #   훅: 프로젝트 내 파일 편집 자동승인(auto_approve, 기본 on; Bash 제외)
 ├── agents/                  # analyze가 실측 시 fan-out (tools: Glob/Grep/Read)
 │   ├── architecture-mapper.md  ·  convention-scout.md  ·  test-pattern-analyzer.md
 ├── skills/                  # 5개 skill (슬래시 + 자동발동)

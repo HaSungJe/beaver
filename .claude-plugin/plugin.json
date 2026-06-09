@@ -2,7 +2,7 @@
   "name": "beaver",
   "displayName": "Beaver",
   "description": "Codebase-aware build companion — analyze your codebase into a convention spec, then plan, build (TDD), and ship to your working branch via isolated worktrees, with inline merge-conflict resolution and refactoring. Language-agnostic (NestJS, Spring, Python, ...).",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "author": {
     "name": "HaSungJe",
     "url": "https://github.com/HaSungJe"

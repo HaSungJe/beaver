@@ -18,6 +18,8 @@ Install via the Claude Code plugin hub. After installation it works immediately,
 
 beaver's PostToolUse hook (`scripts/self-heal.js`) **runs the shell command listed in `commands.test_one` of `.beaver/config.json`** whenever a code/test file is saved (e.g. `npm test -- ...`, `pytest -k ...`). The `commands` values are detected and filled in by `/beaver:analyze`, are **always recorded only after user confirmation**, and can be reviewed and edited directly in `.beaver/config.json`. Do not put untrusted commands there. If Node is absent, the hook runs nothing (no-op).
 
+**`auto_approve` (default on).** A PreToolUse hook (`scripts/auto-approve.js`) **auto-approves in-project file edits** (`Write`/`Edit`/`MultiEdit`/`NotebookEdit`) so Claude Code stops prompting on every plan/build/ship step. **Shell commands (`Bash`) are never auto-approved** — tests, `git push`, and any other command still go through normal confirmation, as do edits to files outside the project. To restore per-edit confirmation, set `"auto_approve": false` in `.beaver/config.json`.
+
 ---
 
 ## Installation

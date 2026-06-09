@@ -18,6 +18,8 @@ Claude Code 플러그인 허브를 통해 설치한다. 설치 후 별도 빌드
 
 beaver의 PostToolUse hook(`scripts/self-heal.js`)은 코드/테스트 파일을 저장할 때 **`.beaver/config.json` 의 `commands.test_one` 에 적힌 셸 명령을 실행**한다(예: `npm test -- ...`, `pytest -k ...`). `commands` 값은 `/beaver:analyze` 가 감지해 채우며 **항상 사용자 확인 후 기록**되고, `.beaver/config.json` 에서 직접 수정·검토할 수 있다. 신뢰하지 않는 커맨드를 넣지 말 것. Node가 없으면 hook은 아무것도 실행하지 않는다(no-op).
 
+**`auto_approve`(기본 on).** PreToolUse hook(`scripts/auto-approve.js`)이 **프로젝트 내 파일 편집**(`Write`/`Edit`/`MultiEdit`/`NotebookEdit`)을 자동 승인해 plan/build/ship 매 단계마다 Claude Code 승인창이 안 뜬다. **셸 명령(`Bash`)은 절대 자동승인 안 함** — 테스트·`git push` 등 모든 명령은 평소대로 확인하고, 프로젝트 밖 파일 편집도 마찬가지. 매 편집 확인으로 돌리려면 `.beaver/config.json` 에 `"auto_approve": false`.
+
 ---
 
 ## 설치

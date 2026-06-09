@@ -155,6 +155,7 @@ When a user corrects a convention or expresses a preference during work (e.g. "h
 - **Automatic validation hooks** (`hooks/hooks.json`, PostToolUse `Write|Edit`) —
   - `on-doc-written.js`: structure validation when a plan/spec/revision document is saved (blocks on missing required sections).
   - `self-heal.js`: on saving an implementation/test file, **runs the shell command** in `commands.test_one` of `.beaver/config.json` to auto-run tests and self-heal (up to 5 attempts). Since the hook executes the project's test command, use it only in a trusted configuration — see the "Behavior & security notice" in [INSTALL.md](./INSTALL.md) for details. **If Node is absent, both hooks are no-ops**, falling back to the skill's manual test flow.
+- **Auto-approve hook** (`auto-approve.js`, PreToolUse, **on by default**) — auto-approves in-project file edits (`Write`/`Edit`/`MultiEdit`/`NotebookEdit`) so Claude Code does not prompt on every plan/build/ship step. **Shell commands (`Bash`) are never auto-approved** — tests, `git push`, etc. still prompt, as do edits outside the project. Set `"auto_approve": false` in `.beaver/config.json` to restore per-edit confirmation.
 - **Approval gates** — commit · merge · push · conflict resolution · review pass always run only after user confirmation.
 - **Rule memory** — user rules in `.beaver/memory/` take priority over `CLAUDE.md` (see above).
 
@@ -192,13 +193,14 @@ beaver/
 │   ├── plugin.json          # plugin manifest (name · version · meta)
 │   └── marketplace.json     # hub distribution manifest (read by /plugin marketplace add)
 ├── README.md  ·  INSTALL.md  ·  LICENSE
-├── hooks/hooks.json         # PostToolUse Write|Edit → on-doc-written.js + self-heal.js
+├── hooks/hooks.json         # PreToolUse → auto-approve.js · PostToolUse Write|Edit → on-doc-written.js + self-heal.js
 ├── scripts/                 # Node CommonJS, zero dependencies, cross-platform
 │   ├── _beaver.js           #   shared helpers (config load · paths)
 │   ├── validate-lib.js      #   document structure validation library
 │   ├── validate-plan.js     #   build entry gate CLI
 │   ├── on-doc-written.js    #   hook: plan/spec/revision document structure validation
-│   └── self-heal.js         #   hook: test_one auto-run · self-heal
+│   ├── self-heal.js         #   hook: test_one auto-run · self-heal
+│   └── auto-approve.js      #   hook: auto-approve in-project file edits (auto_approve, default on; Bash never)
 ├── agents/                  # fan-out by analyze when measuring (tools: Glob/Grep/Read)
 │   ├── architecture-mapper.md  ·  convention-scout.md  ·  test-pattern-analyzer.md
 ├── skills/                  # 5 skills (slash + auto-trigger)
