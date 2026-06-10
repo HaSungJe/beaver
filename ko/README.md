@@ -45,7 +45,7 @@ Claude Code에서:
 | 분석 (독립·1회) | **분석** | `/beaver:analyze` | "코드베이스 분석해줘" | 코드 실측(없으면 프레임워크 표준)으로 `CLAUDE.md` + `docs/` 규약 + `.beaver/config.json` 생성·갱신, 기존 CLAUDE.md·memory 병합·반영 |
 | 기획·구현 | **기획** | `/beaver:plan <기능명>` | "<기능명> 기획해줘" | 신규/변경 자동 판별 → stick 워크트리 격리 생성·진입 → 코드베이스 병렬 심층분석(신규/추가 판별, 신규면 기술검토) → 대화형 1문1답으로 결정 → spec 자동생성 + plan(변경이면 revision) 작성(저장 시 검증 훅). 새 규약 영역이면 draft 문서 |
 | 기획·구현 | **개발** | `/beaver:build` | "작업 시작" | 준비 병렬 fan-out → plan의 테스트 케이스를 실제 테스트 파일로 작성 + 규약대로 구현(**테스트 실행 안 함**) → report. 테스트 실행·커밋·전체 회귀 안 함 |
-| 배포 | **배포** | `/beaver:ship` | "커밋하고 배포" | stick 누적분 승인 커밋 → 코드 리뷰(memory·규약·의도·draft 확정, review 문서) → origin을 stick에 편입(worktree 안) → 원래 브랜치 복귀·fast-forward·push → worktree 파기. 충돌 시 인라인 해결 |
+| 배포 | **배포** | `/beaver:ship` | "커밋하고 배포" | stick 누적분 코드 리뷰(memory·규약·의도·draft 확정, review 문서) → 승인 커밋 → origin을 stick에 편입(worktree 안) → 원래 브랜치 복귀·fast-forward·push → worktree 파기. 충돌 시 인라인 해결 |
 | 검증 (독립) | **테스트** | `/beaver:test` | "전체 테스트 돌려" | **전체 회귀**(`commands.test`)를 현재 체크아웃에서 1회 실행. 독립 — 원격 있는 브랜치(ship 후 원래 브랜치)에서 돌리고, stick worktree 안에선 금지. 통과/실패 보고, 소스 수정 안 함 |
 | 리팩토링 (독립) | **리팩토링** | `/beaver:refactor` | "비슷한 기능 묶어줘" | green baseline 확인 → 대상 식별 → 계획서 작성·승인 → 작은 단위 추출·교체·정리 + 단계별 테스트 → 전체 회귀로 동작 보존 입증. 커밋은 ship |
 
@@ -61,7 +61,7 @@ analyze        # 독립 · 프로젝트당 1회 (규약 문서 생성)
 plan → build   # 한 세트 · stick 워크트리에서 기능마다 반복 (커밋 안 하고 누적)
                #   plan: 현재 브랜치 HEAD에서 .claude/worktrees/<stick> 격리 생성 + 세션 진입
 
-ship           # 한 세트 · 커밋 → 코드리뷰 → origin을 stick에 편입(worktree 안)
+ship           # 한 세트 · 코드리뷰 → 커밋 → origin을 stick에 편입(worktree 안)
                #   → ExitWorktree 복귀 → 원래 브랜치 fast-forward → push → worktree 파기
  └ 충돌 인라인   #   병합 충돌 시 ship이 worktree 안에서 직접 — 규약대로 통합
 
@@ -117,13 +117,13 @@ refactor       # 독립 · 필요 시 (계획서 → 실행, 동작 보존)
 ### 🚀 `/beaver:ship` — 커밋 + 원래 브랜치 병합·푸쉬 + worktree 파기
 
 - **전제** — stick 워크트리 안(`.beaver/.auto-branch-state.json`에 현재 stick 키 존재) + 완료 report 또는 변경분.
-- **① 커밋** — `git status`/`diff` 확인 → 여러 기능이면 논리 단위 커밋 분리 제안 → 메시지 자동 생성 → **승인 후** 커밋.
-- **② 코드 리뷰(병합 전)** — stick의 base 대비 diff를 **memory 규칙 → CLAUDE.md 규약 → plan/spec 의도** 순으로 자가 리뷰:
+- **① 코드 리뷰(커밋 전)** — build는 커밋 없이 누적하므로 ship 진입 시 stick 작업이 미커밋 상태다. **stick base 대비 워킹트리 diff**를 먼저(커밋이 리뷰 통과 상태를 담도록) **memory 규칙 → CLAUDE.md 규약 → plan/spec 의도** 순으로 자가 리뷰:
   - 규약 위반 점검(네이밍·구조·공통 로직 분리·에러·응답·테스트 강도)
   - **memory reconcile** — 미반영 memory 규칙을 CLAUDE.md/docs에 정식 반영 제안
   - **의도 동작 확인** — 누락·오구현 점검
   - **draft 규약 확정** — `<!-- beaver:draft -->` 문서가 코드와 일치하는지 검증 후 마커 제거·확정
-  - 결과를 `templates/review.md`로 `.beaver/output/review/<stick>-review-<YYMMDD>.md`에 기록 → 발견 항목 보고 → "수정 필요"면 build로, "통과"면 병합(승인 없이 병합 금지).
+  - 결과를 `templates/review.md`로 `.beaver/output/review/<stick>-review-<YYMMDD>.md`에 기록 → 발견 항목 보고 → "수정 필요"면 build로(재리뷰), "통과"면 커밋 진행(승인 없이 커밋/병합 금지).
+- **② 커밋(리뷰 후)** — 리뷰 통과 결과를 커밋. `git status`/`diff` 확인 → 여러 기능이면 논리 단위 커밋 분리 제안 → 메시지 자동 생성 → **승인 후** 커밋(리뷰 문서도 함께 커밋).
 - **③ 병합(worktree 안) → 복귀 → fast-forward + push + 파기** — 실질 병합은 **복귀 전, worktree 안에서** 한다(기능 컨텍스트가 거기 있음): stick 브랜치에서 `git fetch origin <origin_branch>` → `git merge origin/<origin_branch>`로 대상 최신을 stick에 편입(충돌 시 ship 인라인 해결). 이제 stick이 origin 최신 + 누적 작업 전부를 담는다. 이어 `ExitWorktree`로 원래 디렉터리(`origin_branch`) 복귀 → `git merge --ff-only <stick>`로 전진(**fast-forward 보장** — 충돌 불가능) → `git push origin <origin_branch>` → `git worktree remove .claude/worktrees/<stick>` + `git branch -d <stick>` + state 키 제거. **ship은 테스트를 돌리지 않는다** — 이후 `/beaver:test`로 검증.
 - **충돌 인라인 해결** — 병합 충돌 시(worktree 안 `merge origin/<origin_branch>` 단계에서만) 별도 스킬 없이 ship이 직접: ours/theirs 의도 파악 → memory·CLAUDE.md 규약대로 통합(임의 폐기 금지) → `git diff --check` 마커 정리 → 통합이 일관되는지 확인 → 승인 후 머지 커밋(위험하면 `git merge --abort`).
 

@@ -26,7 +26,7 @@ This project is managed with [Beaver](https://github.com/HaSungJe/beaver). Each 
 **Flow**:
 - **plan** — from the branch you were working on (main/develop, etc.), create an isolated `stick` under `.claude/worktrees/` and move the session there (if already inside a stick, accumulate into it; don't create a new one).
 - **build** — writes the plan's test cases as real test files + implements (no test run), no commit (accumulates into the stick).
-- **ship** — commit → code review → integrate origin into the stick (in the worktree) → return to the original branch, fast-forward, push → destroy the worktree (ship resolves merge conflicts inline; ship runs no tests).
+- **ship** — code review → commit → integrate origin into the stick (in the worktree) → return to the original branch, fast-forward, push → destroy the worktree (ship resolves merge conflicts inline; ship runs no tests).
 - **test** — `/beaver:test` runs the full regression (`commands.test`) on a real checkout with a remote (the original branch after ship); standalone, never inside a stick worktree.
 - **stick and worktree are local-only** — push happens only in ship, to the original branch.
 

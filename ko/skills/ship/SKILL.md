@@ -10,20 +10,20 @@ plan→build로 stick worktree에 쌓은 누적분을 원래 작업 브랜치(pl
 ## 0. 전제 + memory
 진입 시 `.beaver/memory/`(MEMORY.md + 토픽)를 먼저 읽어 커밋 분리·리뷰에 **최우선** 적용한다(memory > CLAUDE.md > 기본). 완료 작업(report) 또는 변경분이 있어야 함. 없으면 중단. stick worktree 안에서 동작한다(`.beaver/.auto-branch-state.json`에 현재 stick 키가 있어야 함).
 
-## 1. 커밋
-`git status`/`diff` 확인 → 여러 기능이면 논리 단위로 커밋 분리 제안(`.beaver/output/plan|report` 경계 근거) → 메시지 자동 생성(`git log` 스타일 확인) → 스테이징+메시지 **승인 후** 커밋.
-
-## 2. 코드 리뷰 (병합 전)
-stick의 누적 변경분(base 대비 diff)을 **`.beaver/memory/` 규칙 + `CLAUDE.md` 규약·plan/spec 의도 대비 자가 리뷰**하고 결과를 문서로 남긴다:
+## 1. 코드 리뷰 (커밋 전)
+build는 커밋 없이 누적하므로 ship 진입 시 stick 작업이 전부 미커밋 상태다 — 먼저 **stick base 대비 워킹트리 diff**를 리뷰해, §2 커밋이 리뷰 통과 상태를 담게 한다(fix-up 커밋 없음). **`.beaver/memory/` 규칙 + `CLAUDE.md` 규약·plan/spec 의도 대비 자가 리뷰**하고 결과를 문서로 남긴다:
 - 규약 위반 점검 — memory 규칙(최우선) → 네이밍·구조·공통 로직 분리·에러처리·응답·테스트 강도.
 - **memory 반영(reconcile)** — `.beaver/memory/`에서 `CLAUDE.md 반영: 미반영` 엔트리를 훑어 CLAUDE.md/docs 정식 반영을 제안. 승인 시 해당 섹션 수정 + 엔트리를 `반영됨`으로 갱신(코드외 순수 선호는 `불필요`로 두고 memory 영속). 프로토콜 `${CLAUDE_PLUGIN_ROOT}/templates/memory-protocol.md`.
 - **의도 동작 확인** — plan/spec 의도대로 구현됐는지(누락·오구현 없는지). 테스트 통과만으로 끝내지 않는다.
 - **draft 규약 확정** — plan §4.5가 만든 draft 규약 문서(`<!-- beaver:draft ... -->` 마커)가 있으면 **실제 코드와 일치하는지 검증** 후 마커 제거·확정한다. 불일치면 문서를 코드에 맞춰 고친 뒤 확정. 병합으로 비로소 정식 규약이 된다.
 - `${CLAUDE_PLUGIN_ROOT}/templates/review.md` 기반 **`.beaver/output/review/<stick>-review-<YYMMDD>.md`** 작성. `<stick>`은 브랜치명의 `/`→`-`(예: `stick/user-a3f9c2`→`stick-user-a3f9c2`), 도메인 무관·ship 단위 1개. 같은 날 재리뷰면 `-<N>`.
-- 발견 항목을 심각도와 함께 보고 → 사용자 판단: 수정 필요하면 `/beaver:build`로 고친 뒤 재시도, 통과면 병합 진행. **승인 없이 병합으로 넘어가지 않는다.**
+- 발견 항목을 심각도와 함께 보고 → 사용자 판단: 수정 필요하면 `/beaver:build`로 고친 뒤 재리뷰, 통과면 커밋 진행. **승인 없이 커밋/병합으로 넘어가지 않는다.**
+
+## 2. 커밋 (리뷰 후)
+리뷰 통과한 결과를 커밋한다. `git status`/`diff` 확인 → 여러 기능이면 논리 단위로 커밋 분리 제안(`.beaver/output/plan|report` 경계 근거) → 메시지 자동 생성(`git log` 스타일 확인) → 스테이징+메시지 **승인 후** 커밋. §1에서 작성한 리뷰 문서도 함께 커밋된다.
 
 ## 3. 병합(worktree서) → 복귀 → fast-forward + push → 파기
-**§1 커밋·§2 코드리뷰가 끝난 뒤** 진행한다. `origin_branch` = `.beaver/.auto-branch-state.json`에서 현재 stick 키에 매핑된 값(= 원래 작업 브랜치명). ship은 **테스트 스위트를 돌리지 않는다** — ship 후 `origin_branch`에서 `/beaver:test`로 배포 결과를 검증한다(원격·실제 의존성 보유).
+**§1 코드리뷰·§2 커밋이 끝난 뒤** 진행한다. `origin_branch` = `.beaver/.auto-branch-state.json`에서 현재 stick 키에 매핑된 값(= 원래 작업 브랜치명). ship은 **테스트 스위트를 돌리지 않는다** — ship 후 `origin_branch`에서 `/beaver:test`로 배포 결과를 검증한다(원격·실제 의존성 보유).
 
 실질 병합/통합(과 충돌 해결)은 **worktree 안 stick 브랜치에서, 복귀 전에** 일어난다 — 기능 컨텍스트가 거기 있기 때문. 복귀 후 원래 브랜치는 fast-forward만 한다. stick은 항상 최신 스키마이고 원래 브랜치를 **전진**만 시키므로 옛 스키마 체크아웃 위험이 없다. 승인 후 순서대로:
 

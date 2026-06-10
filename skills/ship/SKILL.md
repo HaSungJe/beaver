@@ -10,20 +10,20 @@ Ships, in one pass, the accumulation built up in the stick worktree through plan
 ## 0. Preconditions + memory
 On entry, read `.beaver/memory/` (MEMORY.md + topics) first and apply it with **top priority** to commit separation and review (memory > CLAUDE.md > defaults). There must be completed work (a report) or pending changes. Stop if there is none. Operates inside the stick worktree (`.beaver/.auto-branch-state.json` must hold the current stick key).
 
-## 1. Commit
-Check `git status`/`diff` → if multiple features, propose splitting commits into logical units (using the `.beaver/output/plan|report` boundaries as evidence) → auto-generate the message (check `git log` style) → stage + commit **after approval** of the message.
-
-## 2. Code Review (before merge)
-Self-review the stick's accumulated changes (diff against base) **against `.beaver/memory/` rules + the `CLAUDE.md` conventions and the plan/spec intent**, and record the result in a document:
+## 1. Code Review (before commit)
+build accumulates without committing, so the stick's work is uncommitted at ship entry — review the **working-tree diff against the stick's base** first, so the commit in §2 captures the reviewed result (no fix-up commits). Self-review **against `.beaver/memory/` rules + the `CLAUDE.md` conventions and the plan/spec intent**, and record the result in a document:
 - Convention compliance check — memory rules (top priority) → naming, structure, common-logic extraction, error handling, responses, test strength.
 - **memory reconcile** — scan `.beaver/memory/` for entries marked `CLAUDE.md 반영: 미반영` (unapplied) and propose formally applying them to CLAUDE.md/docs. On approval, edit the relevant section + update the entry to `반영됨` (applied) (pure non-code preferences stay `불필요` (not needed) and persist in memory). Protocol: `${CLAUDE_PLUGIN_ROOT}/templates/memory-protocol.md`.
 - **Intended-behavior check** — confirm the implementation matches the plan/spec intent (nothing missing or wrongly implemented). Do not consider it done just because tests pass.
 - **Finalize draft conventions** — if a draft convention document created by plan §4.5 exists (`<!-- beaver:draft ... -->` marker), **verify it matches the actual code**, then remove the marker and finalize. If it does not match, fix the document to match the code, then finalize. It only becomes a formal convention upon merge.
 - Write **`.beaver/output/review/<stick>-review-<YYMMDD>.md`** based on `${CLAUDE_PLUGIN_ROOT}/templates/review.md`. `<stick>` replaces `/` in the branch name with `-` (e.g., `stick/user-a3f9c2` → `stick-user-a3f9c2`); domain-agnostic, one per ship. For a re-review on the same day, use `-<N>`.
-- Report findings with their severity → user decides: if fixes are needed, fix via `/beaver:build` and retry; if it passes, proceed to merge. **Do not move on to merge without approval.**
+- Report findings with their severity → user decides: if fixes are needed, fix via `/beaver:build` and re-review; if it passes, proceed to commit. **Do not commit/merge without approval.**
+
+## 2. Commit (after review)
+Commit the reviewed result. Check `git status`/`diff` → if multiple features, propose splitting commits into logical units (using the `.beaver/output/plan|report` boundaries as evidence) → auto-generate the message (check `git log` style) → stage + commit **after approval** of the message. The review document written in §1 is committed together.
 
 ## 3. Merge (in worktree) → return → fast-forward + push → destroy
-Proceed **only after §1 commit and §2 code review are complete**. `origin_branch` = the value mapped to the current stick key in `.beaver/.auto-branch-state.json` (= the original work branch name). ship **does not run the test suite** — after ship, verify the deployed result by running `/beaver:test` on `origin_branch` (it has a remote and real dependencies).
+Proceed **only after §1 code review and §2 commit are complete**. `origin_branch` = the value mapped to the current stick key in `.beaver/.auto-branch-state.json` (= the original work branch name). ship **does not run the test suite** — after ship, verify the deployed result by running `/beaver:test` on `origin_branch` (it has a remote and real dependencies).
 
 The real merge/integration (and any conflict resolution) happens **inside the worktree on the stick branch, before returning** — that is where you have full feature context; after returning, the original branch only fast-forwards. Since the stick is always on the latest schema and only **forward** advances the original branch, there is no risk of checking out an old schema. After approval, in order:
 

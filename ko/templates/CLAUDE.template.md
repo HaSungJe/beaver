@@ -26,7 +26,7 @@
 **흐름**:
 - **plan** — 작업하던 브랜치(main/develop 등)에서 `.claude/worktrees/`에 `stick`을 격리 생성하고 세션을 그리로 옮긴다(이미 stick 안이면 누적, 새로 안 만듦).
 - **build** — plan의 테스트 케이스를 실제 테스트 파일로 작성 + 구현(테스트 실행 안 함), 커밋 안 함(stick에 누적).
-- **ship** — 커밋 → 코드리뷰 → origin을 stick에 편입(worktree 안) → 원래 브랜치로 복귀·fast-forward·push → worktree 파기(병합 충돌은 ship이 인라인 해결; ship은 테스트 안 돌림).
+- **ship** — 코드리뷰 → 커밋 → origin을 stick에 편입(worktree 안) → 원래 브랜치로 복귀·fast-forward·push → worktree 파기(병합 충돌은 ship이 인라인 해결; ship은 테스트 안 돌림).
 - **test** — `/beaver:test`가 원격 있는 실제 체크아웃(ship 후 원래 브랜치)에서 전체 회귀(`commands.test`) 실행; 독립, stick worktree 안에선 금지.
 - **stick·worktree는 로컬 전용** — push는 ship에서 원래 브랜치로만.
 

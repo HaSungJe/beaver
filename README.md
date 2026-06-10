@@ -45,7 +45,7 @@ Each stage has two entry points — a **slash command** and **natural language**
 | Analyze (independent · once) | **Analyze** | `/beaver:analyze` | "analyze the codebase" | Generates/updates `CLAUDE.md` + `docs/` conventions + `.beaver/config.json` from measured code (or framework standards if absent), merging & applying any existing CLAUDE.md/memory |
 | Plan & implement | **Plan** | `/beaver:plan <feature>` | "plan <feature>" | Auto-detects new vs. change → creates & enters an isolated stick worktree → parallel deep analysis of the codebase (new vs. addition detection; technical review if new) → interactive one-question-at-a-time decisions → auto-generates spec + writes plan (revision if a change) (validation hook on save). If a new convention area, a draft document |
 | Plan & implement | **Build** | `/beaver:build` | "start work" | Parallel preparation fan-out → writes the plan's test cases as real test files + implements per conventions (**no test execution**) → report. No test run, no commit, no full regression |
-| Ship | **Ship** | `/beaver:ship` | "commit and ship" | Approval-based commit of the stick's accumulation → code review (memory · conventions · intent · draft confirmation, review document) → integrate origin into the stick (in the worktree) → return to the original branch · fast-forward · push → destroy the worktree. Inline resolution on conflict |
+| Ship | **Ship** | `/beaver:ship` | "commit and ship" | Code review of the stick's accumulation (memory · conventions · intent · draft confirmation, review document) → approval-based commit → integrate origin into the stick (in the worktree) → return to the original branch · fast-forward · push → destroy the worktree. Inline resolution on conflict |
 | Verify (independent) | **Test** | `/beaver:test` | "run the full tests" | Runs the **full regression** (`commands.test`) once on the current checkout. Standalone — run it on a branch with a remote (the original branch after ship), never inside a stick worktree. Reports pass/fail; no source edits |
 | Refactor (independent) | **Refactor** | `/beaver:refactor` | "group similar features together" | Confirm green baseline → identify targets → write & approve plan → small-unit extraction · replacement · cleanup + per-step tests → prove behavior preservation via full regression. Commits are left to ship |
 
@@ -61,7 +61,7 @@ analyze        # independent · once per project (generates convention docs)
 plan → build   # one set · repeated per feature in a stick worktree (accumulates without committing)
                #   plan: creates .claude/worktrees/<stick> isolated from the current branch HEAD + enters the session
 
-ship           # one set · commit → code review → integrate origin into the stick (in the worktree)
+ship           # one set · code review → commit → integrate origin into the stick (in the worktree)
                #   → ExitWorktree return → fast-forward the original branch → push → destroy worktree
  └ inline conflict   #   on merge conflict, ship handles it directly in the worktree — integrate per conventions
 
@@ -117,13 +117,13 @@ This is what each skill actually does. **All git/file operations, tests, and app
 ### 🚀 `/beaver:ship` — Commit + merge & push to the original branch + destroy worktree
 
 - **Prerequisite** — inside a stick worktree (the current stick key exists in `.beaver/.auto-branch-state.json`) + a completed report or changes.
-- **① Commit** — check `git status`/`diff` → for multiple features, propose splitting into logical-unit commits → auto-generate message → commit **after approval**.
-- **② Code review (before merge)** — self-review the diff against the stick's base in the order **memory rules → CLAUDE.md conventions → plan/spec intent**:
+- **① Code review (before commit)** — build accumulates without committing, so the stick's work is uncommitted at ship entry; review the **working-tree diff against the stick's base** first (so the commit captures the reviewed result), in the order **memory rules → CLAUDE.md conventions → plan/spec intent**:
   - Convention-violation checks (naming · structure · common-logic separation · errors · responses · test strength)
   - **memory reconcile** — propose formally reflecting unapplied memory rules into CLAUDE.md/docs
   - **Intended-behavior check** — check for omissions and misimplementation
   - **Draft convention confirmation** — verify the `<!-- beaver:draft -->` document matches the code, then remove the marker and confirm
-  - Record the results in `.beaver/output/review/<stick>-review-<YYMMDD>.md` from `templates/review.md` → report findings → "needs fixes" goes to build, "pass" merges (no merge without approval).
+  - Record the results in `.beaver/output/review/<stick>-review-<YYMMDD>.md` from `templates/review.md` → report findings → "needs fixes" goes to build (re-review), "pass" proceeds to commit (no commit/merge without approval).
+- **② Commit (after review)** — check `git status`/`diff` → for multiple features, propose splitting into logical-unit commits → auto-generate message → commit the reviewed result **after approval** (the review document commits along with it).
 - **③ Merge (in worktree) → return → fast-forward + push + destroy** — the real merge happens **inside the worktree, before returning** (that is where you have feature context): still on the stick branch, `git fetch origin <origin_branch>` → `git merge origin/<origin_branch>` to integrate the target's latest into the stick (ship resolves inline on conflict). The stick now holds origin's latest + all accumulated work. Then `ExitWorktree` returns to the original directory (`origin_branch`) → `git merge --ff-only <stick>` advances it (a **guaranteed fast-forward** — no conflict possible) → `git push origin <origin_branch>` → `git worktree remove .claude/worktrees/<stick>` + `git branch -d <stick>` + remove the state key. **ship runs no tests** — verify with `/beaver:test` afterward.
 - **Inline conflict resolution** — on a merge conflict (only at the in-worktree `merge origin/<origin_branch>` step), ship handles it directly with no separate skill: grasp the ours/theirs intent → integrate per memory · CLAUDE.md conventions (no arbitrary discarding) → clean up markers with `git diff --check` → confirm the integration reads coherently → merge commit after approval (`git merge --abort` if risky).
 
