@@ -40,8 +40,13 @@ Performed directly within ship without a separate skill:
 4. **Verify** — confirm the integration is coherent by reading the resolved hunks. Test execution is deferred to `/beaver:test`, run on `origin_branch` after ship.
 5. **Merge commit after approval** — report the integrated result to the user and commit after approval. If risky, offer `git merge --abort`.
 
-## 4. Report
-Commit, review, and merge results. Next: `/beaver:test` on `origin_branch` to verify the deployed result, then `/beaver:plan` for the next feature.
+## 4. Report + offer test
+Report commit, review, and merge results. After destroy, cwd is back on `origin_branch` — which has a remote and installed dependencies, exactly the `/beaver:test` precondition (§0 of test). So **ask the user right here whether to run the regression now**, and on approval invoke `/beaver:test` immediately in this same session (no branch switch needed — you are already on `origin_branch`):
+
+- **Yes** → run `/beaver:test` now (it self-heals on red, then commits/pushes the fix after confirmation).
+- **No** → leave the instruction: run `/beaver:test` on `origin_branch` later to verify the deployed result.
+
+Then `/beaver:plan` for the next feature.
 
 ## Notes
 Do not run without approval. `--no-verify` and force push only on explicit request (with impact disclosed).
