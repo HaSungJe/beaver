@@ -10,14 +10,14 @@
 |------|-----------|------|
 | `<path>` | created/modified/deleted |  |
 
-## Test Results
-- Suites: N / Total: N / Passed: N / Failed: N
+## Tests Written
+<!-- List the test files/cases authored (build writes tests but does not run them). -->
 
-## Self-Heal History
-<!-- If there were retries, describe cause and fix. If none, write "None — passed on first run" -->
+## Verification
+<!-- The reading/reasoning check that the implementation matches the plan/spec intent. The authoritative run is ship's post-merge full regression. -->
 
 ## Remaining Issues
 <!-- If none, write "None" -->
 
 <!-- For change mode (build), do not rewrite the original; append a round section to the end of this file:
-     ## Revision - {YYMMDD}-{N} → Change summary / Changed files / Test results / Self-heal history / Remaining issues -->
+     ## Change - {YYMMDD}-{N} → Change summary / Changed files / Tests written / Verification / Remaining issues -->

@@ -69,16 +69,15 @@ Write it in the structure of `${CLAUDE_PLUGIN_ROOT}/templates/CLAUDE.template.md
 ```json
 {
   "project_name": "...", "stack": ["nestjs"],
-  "commands": { "test": "npm test", "test_one": "npm test -- --testPathPatterns=$NAME", "build": "...", "lint": "...", "setup": "npm ci" },
-  "paths": { "source_root": "src", "test_glob": "**/*.spec.ts", "deps": ["node_modules"] },
+  "commands": { "test": "npm test", "test_one": "npm test -- --testPathPatterns=$NAME", "build": "...", "lint": "..." },
+  "paths": { "source_root": "src", "test_glob": "**/*.spec.ts" },
   "branch": { "stick_prefix": "stick" },
-  "self_heal_retry_limit": 5,
   "auto_approve": true
 }
 ```
 The `$NAME` in `test_one` is substituted when running a single test (e.g., `pytest -k $NAME` for pytest). Confirm commands with the user. `stack` includes the stack selected/adopted in §1.5.
 
-**`paths.deps` + `commands.setup` (worktree dependency provisioning)** — gitignored dependency dirs (`node_modules`, `.venv`, `vendor`, …) are **not** checked out into a fresh stick worktree, so a test suite that resolves them at boot fails to even start. `paths.deps` lists those dirs; plan §2 links each from the main repo into the new worktree right after creation. `commands.setup` (e.g. `npm ci`, `pip install -r requirements.txt`) is the fallback — run inside the worktree when the main repo lacks the dep dir, or when a stick adds a new dependency the linked dir does not have. Derive both from the stack; omit `deps` (empty/unset) and `setup` if the project has no installed-dependency dir.
+**No worktree dependency provisioning** — dependencies live in the real developer checkouts (main / `origin_branch`); the stick worktree is never populated with dependency dirs (`node_modules`, `.venv`, `vendor`, …) because nothing runs code there — build only writes tests, and the single full regression runs at ship on the `origin_branch` checkout, which already has its dependencies.
 
 **Config defaults (prose — the JSON above is one example; do not add comments inside JSON):** derive `stack`, `source_root`, `test_glob`, and the `build`/`test`/`test_one` commands from what this project actually uses — read them off the code/manifest (path:line) and name them exactly as the project does. Where code does not settle them, fall back to the detected framework's idiomatic baseline. `test_one` substitutes `$NAME` for a single test the way the project's test runner expects. Confirm with the user.
 

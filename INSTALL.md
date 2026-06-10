@@ -9,14 +9,14 @@ Install via the Claude Code plugin hub. After installation it works immediately,
 | Item | Why it's needed |
 |---|---|
 | **Claude Code** (plugin-capable version) | Loading skills, hooks, and agents |
-| **Node.js** (`node` on PATH) | Running verification and self-heal hook scripts (`scripts/*.js`). Without it, hooks silently no-op and are replaced by the skill's in-loop tests |
+| **Node.js** (`node` on PATH) | Running the document-validation hook script (`scripts/on-doc-written.js`) and the auto-approve hook. Without it the hooks silently no-op (document structure is checked manually by the skill) |
 | **git** | Branch, commit, and merge operations in plan/ship |
 
 > Works regardless of the target project's language (NestJS/Spring/Python/...). Test and build commands are detected by `/beaver:analyze` and recorded in `.beaver/config.json`.
 
 ### ⚠️ Behavior and Security Notice
 
-beaver's PostToolUse hook (`scripts/self-heal.js`) **runs the shell command listed in `commands.test_one` of `.beaver/config.json`** whenever a code/test file is saved (e.g. `npm test -- ...`, `pytest -k ...`). The `commands` values are detected and filled in by `/beaver:analyze`, are **always recorded only after user confirmation**, and can be reviewed and edited directly in `.beaver/config.json`. Do not put untrusted commands there. If Node is absent, the hook runs nothing (no-op).
+beaver's hooks **do not execute any project test or build command**. The only PostToolUse hook (`scripts/on-doc-written.js`) validates the structure of saved plan/spec/revision documents; it runs no shell command. Test execution happens only inside the ship skill (the single post-merge full regression), via a `Bash` call that is never auto-approved and always prompts. The `commands` values in `.beaver/config.json` are detected and filled by `/beaver:analyze`, **always recorded only after user confirmation**, and can be reviewed/edited directly.
 
 **`auto_approve` (default on).** A PreToolUse hook (`scripts/auto-approve.js`) **auto-approves in-project file edits** (`Write`/`Edit`/`MultiEdit`/`NotebookEdit`) so Claude Code stops prompting on every plan/build/ship step. **Shell commands (`Bash`) are never auto-approved** — tests, `git push`, and any other command still go through normal confirmation, as do edits to files outside the project. To restore per-edit confirmation, set `"auto_approve": false` in `.beaver/config.json`.
 
@@ -148,7 +148,7 @@ After making changes, apply them with `/reload-plugins`.
 | Symptom | Check |
 |---|---|
 | Slash commands don't show up | Verify beaver is **enabled** in `/plugin`. Restart or `/reload-plugins` |
-| Hook doesn't run, so verification/self-heal doesn't happen | Check that `node` is on PATH (`node -v`). Without it the hook is a no-op — replaced by the skill's manual test flow |
+| Document-validation hook doesn't run | Check that `node` is on PATH (`node -v`). Without it `on-doc-written.js` is a no-op — document structure is validated manually by the skill |
 | `/beaver:plan` aborts with "no convention docs" | Run `/beaver:analyze` once first to generate `CLAUDE.md` |
 | Test command is wrong | Edit `commands.test` / `test_one` in `.beaver/config.json` to match the project |
 | Update isn't applied | 1) `/plugin marketplace update beaver` 2) `/plugin` → `Installed` → beaver → `Update` 3) `/reload-plugins` (Step 3 of [Updating](#updating) above). If it still fails, Disable→Enable or restart |

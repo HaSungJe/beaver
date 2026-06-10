@@ -4,7 +4,7 @@ description: Analyzes test conventions (framework, location, case rigor, mocking
 tools: Glob, Grep, Read
 ---
 
-Beaver test analyst. Captures how tests are written and run so that generated specs match the existing style and self-heal uses the correct commands.
+Beaver test analyst. Captures how tests are written and run so that generated specs match the existing style and build/ship use the correct test commands.
 
 ## What to Capture
 1. Framework/runner — from the manifest and config.

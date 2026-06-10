@@ -9,14 +9,14 @@ Claude Code 플러그인 허브를 통해 설치한다. 설치 후 별도 빌드
 | 항목 | 필요 이유 |
 |---|---|
 | **Claude Code** (플러그인 지원 버전) | skill·hook·agent 로딩 |
-| **Node.js** (PATH에 `node`) | 검증·자가수복 hook 스크립트 실행 (`scripts/*.js`). 없으면 hook은 조용히 no-op 되고 skill의 in-loop 테스트로 대체된다 |
+| **Node.js** (PATH에 `node`) | 문서 검증 hook 스크립트(`scripts/on-doc-written.js`)·자동승인 hook 실행. 없으면 hook은 조용히 no-op (문서 구조는 skill이 수동 검사) |
 | **git** | plan/ship의 브랜치·커밋·병합 동작 |
 
 > 대상 프로젝트의 언어(NestJS/Spring/Python/…)와 무관하게 동작한다. 테스트·빌드 커맨드는 `/beaver:analyze` 가 감지해 `.beaver/config.json` 에 기록한다.
 
 ### ⚠️ 동작·보안 고지
 
-beaver의 PostToolUse hook(`scripts/self-heal.js`)은 코드/테스트 파일을 저장할 때 **`.beaver/config.json` 의 `commands.test_one` 에 적힌 셸 명령을 실행**한다(예: `npm test -- ...`, `pytest -k ...`). `commands` 값은 `/beaver:analyze` 가 감지해 채우며 **항상 사용자 확인 후 기록**되고, `.beaver/config.json` 에서 직접 수정·검토할 수 있다. 신뢰하지 않는 커맨드를 넣지 말 것. Node가 없으면 hook은 아무것도 실행하지 않는다(no-op).
+beaver의 hook은 **프로젝트 테스트·빌드 명령을 실행하지 않는다.** 유일한 PostToolUse hook(`scripts/on-doc-written.js`)은 저장된 plan/spec/revision 문서의 구조만 검증하며, 셸 명령은 돌리지 않는다. 테스트 실행은 ship skill 안에서만(단일 병합 후 전체 회귀), 절대 자동승인되지 않고 항상 확인을 거치는 `Bash` 호출로 일어난다. `.beaver/config.json` 의 `commands` 값은 `/beaver:analyze` 가 감지해 채우며 **항상 사용자 확인 후 기록**되고 직접 수정·검토할 수 있다.
 
 **`auto_approve`(기본 on).** PreToolUse hook(`scripts/auto-approve.js`)이 **프로젝트 내 파일 편집**(`Write`/`Edit`/`MultiEdit`/`NotebookEdit`)을 자동 승인해 plan/build/ship 매 단계마다 Claude Code 승인창이 안 뜬다. **셸 명령(`Bash`)은 절대 자동승인 안 함** — 테스트·`git push` 등 모든 명령은 평소대로 확인하고, 프로젝트 밖 파일 편집도 마찬가지. 매 편집 확인으로 돌리려면 `.beaver/config.json` 에 `"auto_approve": false`.
 
@@ -148,7 +148,7 @@ claude --plugin-dir /path/to/beaver
 | 증상 | 확인 |
 |---|---|
 | 슬래시가 안 보임 | `/plugin` 에서 beaver가 **enabled** 인지 확인. 재시작 또는 `/reload-plugins` |
-| hook이 안 도는데 검증/자가수복이 안 됨 | `node` 가 PATH에 있는지 (`node -v`). 없으면 hook은 no-op — skill의 수동 테스트 흐름으로 대체 |
+| 문서 검증 hook이 안 돎 | `node` 가 PATH에 있는지 (`node -v`). 없으면 `on-doc-written.js` 가 no-op — 문서 구조는 skill이 수동 검증 |
 | `/beaver:plan` 이 "규약 문서 없음" 으로 중단 | `/beaver:analyze` 를 먼저 1회 실행해 `CLAUDE.md` 생성 |
 | 테스트 커맨드가 틀림 | `.beaver/config.json` 의 `commands.test` / `test_one` 을 프로젝트에 맞게 수정 |
 | 업데이트가 반영 안 됨 | 1) `/plugin marketplace update beaver` 2) `/plugin` → `Installed` → beaver → `Update` 3) `/reload-plugins` (위 [업데이트](#업데이트) 3단계). 그래도면 Disable→Enable 또는 재시작 |

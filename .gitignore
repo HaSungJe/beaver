@@ -7,8 +7,6 @@ Thumbs.db
 *.log
 
 # Beaver runtime state (only relevant if this repo is itself managed by beaver)
-.beaver/.retry-count
-.beaver/.current-spec
 .beaver/.auto-branch-state.json
 
 # Beaver stick worktrees (CC EnterWorktree)

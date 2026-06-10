@@ -25,11 +25,11 @@
 
 **흐름**:
 - **plan** — 작업하던 브랜치(main/develop 등)에서 `.claude/worktrees/`에 `stick`을 격리 생성하고 세션을 그리로 옮긴다(이미 stick 안이면 누적, 새로 안 만듦).
-- **build** — TDD 구현, 커밋 안 함(stick에 누적).
-- **ship** — 커밋 → 코드리뷰 → 전체회귀 → 원래 브랜치로 복귀·전진병합·push → worktree 파기(병합 충돌은 ship이 인라인 해결).
+- **build** — plan의 테스트 케이스를 실제 테스트 파일로 작성 + 구현(테스트 실행 안 함), 커밋 안 함(stick에 누적).
+- **ship** — 커밋 → 코드리뷰 → 원래 브랜치로 복귀·전진병합 → 그 체크아웃에서 전체회귀 → push → worktree 파기(병합 충돌은 ship이 인라인 해결).
 - **stick·worktree는 로컬 전용** — push는 ship에서 원래 브랜치로만.
 
-**위치**: 설정 `.beaver/config.json` · 산출물 `.beaver/output/{spec,plan,revision,report,review,refactor}/` (spec/plan/revision/report는 `<domain>/` 하위, review는 stick 단위 flat, refactor는 주제 단위 flat) · 메모리 `.beaver/memory/`(인덱스 MEMORY.md, 코드로 알 수 있는 내용은 저장 안 함) · 상태 dotfile `.beaver/.auto-branch-state.json`(stick→원래 브랜치 매핑)·`.retry-count`·`.current-spec` · stick 워크트리 `.claude/worktrees/`.
+**위치**: 설정 `.beaver/config.json` · 산출물 `.beaver/output/{spec,plan,revision,report,review,refactor}/` (spec/plan/revision/report는 `<domain>/` 하위, review는 stick 단위 flat, refactor는 주제 단위 flat) · 메모리 `.beaver/memory/`(인덱스 MEMORY.md, 코드로 알 수 있는 내용은 저장 안 함) · 상태 dotfile `.beaver/.auto-branch-state.json`(stick→원래 브랜치 매핑) · stick 워크트리 `.claude/worktrees/`.
 **우선순위**: `.beaver/memory/` 의 사용자 규칙이 이 문서(CLAUDE.md)보다 **우선**한다. 작업 중 사용자 지적은 확인 후 memory에 누적되고, 필요 시 이 문서에도 반영된다(충돌 시 memory가 이김).
 
 ---
@@ -39,7 +39,7 @@
 ## ⚠️ 주의사항
 <!-- 담을 것: Claude 가 절대/조건부로 실행하면 안 되는 명령(서버 기동, 마이그레이션, 배포 등)과 예외.
      깊이: 3~5줄. 프로젝트 운영 규칙이 없으면 섹션 삭제.
-     예) `npm run`/`gradle bootRun` 류는 사용자만 실행. 단 테스트 커맨드는 구현 후 Claude 가 직접 실행. -->
+     예) `npm run`/`gradle bootRun` 류는 사용자만 실행. 테스트 커맨드는 ship 전체회귀 단계에서 Claude 가 실행(build 는 테스트를 작성만 하고 실행하지 않음). -->
 
 ## Architecture
 <!-- 담을 것: 스택(프레임워크+버전+핵심 의존성) · 디렉터리 레이아웃(역할 주석) · 레이어 경계(누가 누구를 호출)
