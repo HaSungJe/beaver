@@ -1,18 +1,17 @@
 ---
 name: build
-description: Implements a planned plan/revision test-first (TDD), then self-heals and reports. Triggers on "작업 시작", "구현", "build", "<feature name> 작업 시작", "start work", "implement", "build <feature>" requests. Auto-detects new vs. modification; with no argument, auto-discovers unimplemented plans.
+description: Implements a planned plan/revision (writes test files, then implements) and reports. Triggers on "작업 시작", "구현", "build", "<feature name> 작업 시작", "start work", "implement", "build <feature>" requests. Auto-detects new vs. modification; with no argument, auto-discovers unimplemented plans. Tests are written here but executed only at ship.
 ---
 
-# build — Test-First (TDD) → Implement → Self-Heal → Report
+# build — Write Tests → Implement → Report
 
-build **does not commit** — it only implements and tests, accumulating on the stick branch. Deployment is done via `/beaver:ship`.
+build **does not commit** — it only writes tests and implements, accumulating on the stick branch. Deployment is done via `/beaver:ship`.
 
 ## 0. Ensure Stick Worktree → Memory First + Mode/Target
 
 **Ensure in the stick worktree (before any read or write)**: build accumulates on the stick branch, so it must run **inside** the stick worktree — never the main repo. Do this before scanning `.beaver/output/` or writing the report (otherwise a fresh session leaks the report into main).
 - **If already inside a stick worktree** (cwd is `.claude/worktrees/<stick>` and `.beaver/.auto-branch-state.json` has the key) → proceed.
 - **Otherwise** (fresh session, cwd at main) → do **not** scan main. Find the stick worktree under `.claude/worktrees/` that holds an unimplemented plan/revision for the target feature (match by feature name; the stick name carries the domain). If exactly one matches, `EnterWorktree(name=<stick>)` to resume it; if none or 2+ match, stop and tell the user to run `/beaver:plan` first or name the target explicitly.
-- **Ensure dependencies present** (either branch, after entering) → a worktree checks out tracked files only, so gitignored dep dirs may be missing (worktree created before this guard existed, or `paths.deps` was unset at plan time). For each dir in `paths.deps`, if the main repo has it and the worktree does not, link it (Windows `cmd /c mklink /J`, POSIX `ln -s`) — same as plan §2 step 5. If `paths.deps` is unset but `commands.setup` is defined, run `commands.setup` in the worktree. Skip if the dep dir is already present. Without this, `test_one` fails at module resolution.
 
 **Read memory first**: read `.beaver/memory/` (MEMORY.md + relevant topics) and apply it with **top priority** throughout implementation (memory > CLAUDE.md > defaults). If the user points out a persistent rule during implementation (a constraint on where some responsibility belongs in this project's own structure), **confirm and save it**, then apply immediately — protocol: `${CLAUDE_PLUGIN_ROOT}/templates/memory-protocol.md`. If it conflicts with or reinforces a CLAUDE.md convention, also propose reflecting it in CLAUDE.md (do not edit immediately; only apply memory-first).
 
@@ -32,25 +31,22 @@ Only the preparation work before implementation. **Size the fan-out**: a small/r
 - Flesh out test cases (per CLAUDE.md testing strength)
 - Identify reusable units — derive the units this project **actually** reuses from code evidence (path:line) and refer to them by the project's own names.
 
-The output feeds into §2 (red) and §3 (green) as input. **Preparation is parallel; implementation (§2–3) is sequential TDD** — preserve the red→green discipline (do not parallelize implementation).
+The output feeds into §2 (write tests) and §3 (implement). **Preparation is parallel; implementation (§2–3) is sequential** (do not parallelize implementation).
 
-## 2. Test First (red)
-Write the plan/revision's "test cases" as **actual test code first** — at the strength of the CLAUDE.md testing convention (do not just verify the outcome/interface contract — assert the real behavior). Exercise the entry point at full strength using the testing tools and patterns this project **actually** uses (derive them from code evidence and the CLAUDE.md testing convention; do not assume any position-specific test construct). Run `commands.test_one` (with `$NAME` substituted) and confirm it **fails as intended (red)** (no implementation yet → failing is correct). If compilation is blocked, leave only the signature/stub to secure the red state. *When the test is saved, the `self-heal` hook runs automatically — the first red is normal, and you then make it green with the implementation. However, this first red also consumes one `.retry-count`, so the automatic retries remaining until green are `self_heal_retry_limit - 1`.*
+## 2. Write Tests
+Write the plan/revision's "test cases" as **actual test code** — at the strength of the CLAUDE.md testing convention (do not just verify the outcome/interface contract — assert the real behavior). Exercise the entry point at full strength using the testing tools and patterns this project **actually** uses (derive them from code evidence and the CLAUDE.md testing convention; do not assume any position-specific test construct). **Do not run the tests in build** — execution is deferred to the single full-regression gate in `/beaver:ship` (after the stick merges into the original branch, on that branch's checkout). This is deliberate: the worktree has no dependency dirs, and running tests mid-build against an incomplete environment produces false failures.
 
-## 3. Implement → green
-Implement the plan/revision design per the `config.json` paths + `CLAUDE.md` conventions so the tests pass. In modification mode, reflect only the "post-change spec" and clean up removed branches.
-- On failure, analyze, fix, and rerun (up to `self_heal_retry_limit`, default 5). The `self-heal` hook assists automatically on implementation-file saves **only while a retry is in progress (`.retry-count` exists)** (the first red in §2 creates `.retry-count`). "green" need not be a unit-test pass: depending on the project the command that decides green (`commands.test_one`) may be a typecheck, a build, or another runner — use whatever this project actually uses; the workflow (red→green→self-heal) is identical, only that command differs.
-- **Check only the tests created in this task (`test_one`).** Full regression of all existing tests is not run in build — it is run once just before the `/beaver:ship` merge (since multiple features accumulate on the stick, avoid the waste of running the full suite on every build).
-- **Draft convention sync**: if a draft convention document created by plan §4.5 exists (`beaver:draft` marker) and the implementation diverges from the design (self-heal, approach change, etc.), **update that document to match the actual code**. Keep the marker (finalization happens at ship). Keep code↔convention draft always in sync.
+## 3. Implement
+Implement the plan/revision design per the `config.json` paths + `CLAUDE.md` conventions, satisfying the test cases you wrote. In modification mode, reflect only the "post-change spec" and clean up removed branches.
+- **build runs no tests.** All test execution — for the new feature and full regression — happens once at ship, on the merge-target checkout (which has real, developer-maintained dependencies). This avoids running tests in the worktree where module resolution is unreliable.
+- **Draft convention sync**: if a draft convention document created by plan §4.5 exists (`beaver:draft` marker) and the implementation diverges from the design (approach change, etc.), **update that document to match the actual code**. Keep the marker (finalization happens at ship). Keep code↔convention draft always in sync.
 
-### Stuck Fallback (when the self-heal limit is exhausted)
-When self-heal exhausts the limit (default 5 times) on the same failure, **do not end build as a success** and stop guesswork fixes:
-1. **Isolate the root cause** — form hypotheses (mock, call order, async, design mismatch, etc.) and verify them one by one to pin down the real cause.
+### Stuck Fallback (when implementation reveals the plan is wrong)
+If, while implementing, you find the plan/approach itself is wrong (not just a local code mistake), **do not force it through** — feed it back into planning:
+1. **Isolate the root cause** — form hypotheses (design mismatch, missing infra, wrong approach, etc.) and verify them to pin down the real cause.
 2. **Return to plan** — propose a resolution approach based on the cause, or have the user propose one.
 3. **Update plan/revision** — directly edit the undeployed plan with the agreed approach (or a new revision).
 4. **Re-enter build** — start again from §2 with the updated plan.
-
-Premise: if implementation gets stuck, the plan/approach may be wrong — instead of ending a blockage with a human call, feed it back into planning.
 
 ## 4. Report
 Based on `${CLAUDE_PLUGIN_ROOT}/templates/report.md`:
@@ -58,4 +54,4 @@ Based on `${CLAUDE_PLUGIN_ROOT}/templates/report.md`:
 - Modification → append `## Modification - <YYMMDD>-<N>` to the end of the existing report.
 
 ## 5. Reporting
-**Verify before completion**: not just that tests pass, but that it behaves as the plan/spec intends (check for omissions and misimplementations; actually exercise it if possible — using whatever exercise path this project actually supports). Then report the results truthfully. If there is more work, accumulate with `/beaver:plan`→`build`; if done, `/beaver:ship`.
+**Verify before completion**: build does not run tests, so verify by reading/reasoning that the implementation behaves as the plan/spec intends (check for omissions and misimplementations; do a cheap manual exercise where the project supports it). The authoritative test run is the ship full regression. Then report the results truthfully. If there is more work, accumulate with `/beaver:plan`→`build`; if done, `/beaver:ship`.

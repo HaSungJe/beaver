@@ -26,7 +26,8 @@ description: 기능을 기획해 문서(spec → plan, 변경이면 revision)를
   2. stick 이름 = `<stick_prefix>/<domain>-<rand6>` (기본 `stick/...`). 도메인은 기능명/요청에서 추출.
   3. `EnterWorktree(name=<stick>)` 호출 → CC가 `.claude/worktrees/<stick>` 생성 + 세션 cwd 전환(base=현재 HEAD, §0의 baseRef=head).
   4. `.beaver/.auto-branch-state.json`에 `{ "<stick>": "<origin_branch>" }` 기록.
-  5. **워크트리에 의존성 링크** — fresh 워크트리는 추적 파일만 체크아웃하므로, gitignore된 의존성 디렉터리(`node_modules`, `.venv`, `vendor`, …)는 없고 테스트가 모듈 해석에서 실패한다("진입 자체가 안 됨" — ship §2.5 실패 지점). `paths.deps`의 각 디렉터리에 대해, 메인 repo에는 있고 새 워크트리에는 없으면 링크한다: Windows `cmd /c mklink /J "<worktree>\<dep>" "<main>\<dep>"`(junction), POSIX `ln -s "<main>/<dep>" "<worktree>/<dep>"`. 링크는 디스크에 남으므로 이후 `build` 재진입이 재사용 — 재확인 불필요. 메인 repo에도 dep 디렉터리가 없으면 대신 워크트리에서 `commands.setup` 실행. **주의:** 링크는 메인의 deps를 가리키므로, 이 stick이 매니페스트에 *새* 의존성을 추가하면 워크트리 안에서 `commands.setup`을 실행해 링크를 실제 격리 dep 디렉터리로 교체. `paths.deps`가 미설정/빈값이면 전체 생략.
+
+  워크트리에는 의존성 디렉터리를 **채우지 않는다**: 워크트리에서 코드를 실행하는 단계가 없다(build는 테스트를 작성만 하고 실행하지 않으며, 전체 회귀는 ship에서 원래 브랜치 체크아웃—이미 의존성 보유—에서 돈다).
 
 생성한 worktree·stick·origin_branch를 한 줄로 알린다. stick·worktree 모두 로컬 전용 — 원격 push는 ship에서만.
 
