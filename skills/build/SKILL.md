@@ -7,7 +7,12 @@ description: Implements a planned plan/revision test-first (TDD), then self-heal
 
 build **does not commit** — it only implements and tests, accumulating on the stick branch. Deployment is done via `/beaver:ship`.
 
-## 0. Memory First + Mode/Target
+## 0. Ensure Stick Worktree → Memory First + Mode/Target
+
+**Ensure in the stick worktree (before any read or write)**: build accumulates on the stick branch, so it must run **inside** the stick worktree — never the main repo. Do this before scanning `.beaver/output/` or writing the report (otherwise a fresh session leaks the report into main).
+- **If already inside a stick worktree** (cwd is `.claude/worktrees/<stick>` and `.beaver/.auto-branch-state.json` has the key) → proceed.
+- **Otherwise** (fresh session, cwd at main) → do **not** scan main. Find the stick worktree under `.claude/worktrees/` that holds an unimplemented plan/revision for the target feature (match by feature name; the stick name carries the domain). If exactly one matches, `EnterWorktree(name=<stick>)` to resume it; if none or 2+ match, stop and tell the user to run `/beaver:plan` first or name the target explicitly.
+
 **Read memory first**: read `.beaver/memory/` (MEMORY.md + relevant topics) and apply it with **top priority** throughout implementation (memory > CLAUDE.md > defaults). If the user points out a persistent rule during implementation (a constraint on where some responsibility belongs in this project's own structure), **confirm and save it**, then apply immediately — protocol: `${CLAUDE_PLUGIN_ROOT}/templates/memory-protocol.md`. If it conflicts with or reinforces a CLAUDE.md convention, also propose reflecting it in CLAUDE.md (do not edit immediately; only apply memory-first).
 
 ### Mode/Target
@@ -19,8 +24,8 @@ build **does not commit** — it only implements and tests, accumulating on the 
 - **New**: `plan.md` exists / no unanswered spec decisions / all prerequisite items `[x]` / `node ${CLAUDE_PLUGIN_ROOT}/scripts/validate-plan.js <path>` passes.
 - **Modification**: latest `revision-*.md` exists / no unanswered decisions / prerequisite items `[x]`.
 
-## 1.5 Preparation (parallel fan-out, for speed)
-Only the preparation work before implementation is finished quickly via fan-out (parallel first: Workflow parallel / Task distribution / sequential if not possible):
+## 1.5 Preparation (fan-out sized to the task)
+Only the preparation work before implementation. **Size the fan-out**: a small/routine change does this inline (subagent boot cost outweighs the benefit); a large/multi-file change fans out (parallel first: Workflow parallel / Task distribution / sequential if not possible), giving **each agent the plan's file list as its read scope** rather than the whole codebase. Steps:
 - Analyze the plan/revision (read file list, layers/units, and test cases carefully)
 - Map existing code to be touched (path:line)
 - Flesh out test cases (per CLAUDE.md testing strength)

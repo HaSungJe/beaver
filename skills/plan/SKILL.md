@@ -5,11 +5,11 @@ description: Plans a feature and writes the documents (spec → plan, or revisio
 
 # plan — Feature Planning (spec → plan / revision)
 
-## 0. Prerequisites
+## 0. Prerequisites (main repo — reads only, plus one config seed)
+These run before the worktree exists, so they read from the main repo. Do **not** write anything here except the baseRef seed below.
 - `CLAUDE.md` required. If missing, stop and direct the user to `/beaver:analyze`.
 - Read path and `branch` settings from `.beaver/config.json`.
-- **Read memory first**: read `.beaver/memory/` (MEMORY.md + relevant topics) and apply it to the plan with **top priority** (memory > CLAUDE.md). If the user points out a persistent rule during planning, confirm and save it — protocol `${CLAUDE_PLUGIN_ROOT}/templates/memory-protocol.md`.
-- **Ensure worktree settings**: verify that `worktree.baseRef` in `.claude/settings.json` is `"head"`, and if it is missing or different, set it to `"head"` (merge-patch, preserve other keys). This ensures EnterWorktree branches the stick from the currently checked-out HEAD (the default `fresh` uses origin/default-branch, which would miss develop and similar branches).
+- **Ensure worktree settings**: verify that `worktree.baseRef` in `.claude/settings.json` is `"head"`, and if it is missing or different, set it to `"head"` (merge-patch, preserve other keys). This ensures EnterWorktree branches the stick from the currently checked-out HEAD (the default `fresh` uses origin/default-branch, which would miss develop and similar branches). **This is the only sanctioned main-repo write during planning** — EnterWorktree must read baseRef before the worktree exists, so it cannot live inside the worktree. It is idempotent (writes only when missing/different); everything after §2 is worktree-local.
 
 ## 1. Mode Detection
 By the target feature name:
@@ -17,8 +17,8 @@ By the target feature name:
 - Otherwise → **new mode** (spec → plan).
 When ambiguous, confirm with the user.
 
-## 2. Entering the Worktree (stick isolation)
-When plan starts, isolate the stick into `.claude/worktrees/` and move the session there — leave the current working directory untouched (enables parallel sessions).
+## 2. Enter the Worktree FIRST (stick isolation)
+Enter the worktree **before any write**. Only the git reads in §0–§1 precede it. Every write below — memory, spec, plan, revision, convention docs — then lands worktree-local and reaches the original branch only when ship merges the stick. This isolates the stick into `.claude/worktrees/` and moves the session there — the original working directory is left untouched (enables parallel sessions).
 
 - **If already inside a stick worktree** (the current cwd is `.claude/worktrees/<stick>` and `.beaver/.auto-branch-state.json` has the corresponding key) → keep accumulating there (do not create a new one).
 - Otherwise:
@@ -29,15 +29,19 @@ When plan starts, isolate the stick into `.claude/worktrees/` and move the sessi
 
 Announce the created worktree, stick, and origin_branch in one line. Both stick and worktree are local-only — remote push happens only in ship.
 
+**Now inside the worktree — read memory first**: read `.beaver/memory/` (MEMORY.md + relevant topics) and apply it to the plan with **top priority** (memory > CLAUDE.md). If the user points out a persistent rule during planning, confirm and save it (worktree-local, ships with the stick) — protocol `${CLAUDE_PLUGIN_ROOT}/templates/memory-protocol.md`.
+
 ## 3. New Mode (analysis → conversation → spec → plan)
 > **decision** = an item that CLAUDE.md/memory alone cannot settle and that requires user confirmation.
 > **Artifacts** — spec: `.beaver/output/spec/<domain>/<feature>-spec.md` (`templates/spec.md`), plan: `.beaver/output/plan/<domain>/<feature>-plan.md` (`templates/plan.md`).
 
-1. **Parallel deep analysis** — read the codebase quickly via fan-out (prefer parallel: Workflow parallel / Task distribution / sequential when not possible). Agents under `${CLAUDE_PLUGIN_ROOT}/agents/`:
-   - architecture-mapper — structure of adjacent subsystems
-   - convention-scout — conventions for this domain
-   - test-pattern-analyzer — test conventions: derive from this project's actual test setup by code evidence (path:line) and use the project's own tools/names; assume no particular stack's syntax.
-   - reuse/adjacency scan (a general scan, not an agent) — similar features, reusable units of work, and the affected data/state. Derive what this project actually treats as a reusable unit and what data/state the feature persists or fetches from code evidence (path:line), using the project's own names.
+1. **Deep analysis — fan-out sized to the task.** First a cheap inline pre-scan locates the feature's domain dir + adjacent subsystems (= the **read scope**) and judges routine-vs-net-new. Then size the fan-out — each subagent pays a full context-boot cost and cold-reads files, so token cost grows ~linearly with agent count while wall-clock only drops ~1/N; spend agents only where they pay off:
+   - **Routine feature matching an existing pattern** → **no fan-out**. One inline scoped pass over the located paths. Subagent boot cost outweighs the benefit on small tasks.
+   - **Net-new / multi-subsystem / complex** → parallel fan-out (Workflow parallel / Task distribution / sequential when not possible), but give **each agent its explicit read scope** (the located dirs/files) — never "read the whole codebase". Scoped reads stop agents cold-reading the same shared files. Use only the agents that apply (2–4), drop the rest. Agents under `${CLAUDE_PLUGIN_ROOT}/agents/`:
+     - architecture-mapper — structure of adjacent subsystems
+     - convention-scout — conventions for this domain
+     - test-pattern-analyzer — test conventions: derive from this project's actual test setup by code evidence (path:line) and use the project's own tools/names; assume no particular stack's syntax.
+   - reuse/adjacency scan (**always inline**, never an agent) — similar features, reusable units of work, and the affected data/state. Derive what this project actually treats as a reusable unit and what data/state the feature persists or fetches from code evidence (path:line), using the project's own names.
 2. **Classification** — determine whether the feature is ① an **addition to an existing pattern** (a routine feature that matches a pattern already present in this project) or ② **net-new** (a special area not present in the current code/conventions). Judge "matches an existing pattern" by what this project's code actually does; if net-new, add a **technical implementation review + proposal** (required libraries/approaches/alternatives) for the decision points this project genuinely has to settle.
 3. **Proposal** — "integrate with existing `X` / reuse existing `Y` pattern / 2-3 design approaches (tradeoffs, recommendation)" with evidence (path:line).
 4. **Interactive one-question-at-a-time** — instead of dumping a blank spec, ask **one at a time**: design-approach selection, undecided decisions. Collect answers.

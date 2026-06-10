@@ -58,10 +58,27 @@ idempotent — writes only when missing/different). This is the **only** sanctio
 main-repo write during planning. It is harness config, not a feature artifact, so
 main is its correct home.
 
+### E. `plan` §3.1 — size the fan-out to the task (token reduction)
+The current step always spawns 3 parallel analysis agents + a scan, regardless of
+task size. Each subagent pays a full context-boot cost (own system prompt, agent
+def, tool schemas) and cold-reads overlapping files, so token cost grows ~linearly
+with agent count while wall-clock only drops ~1/N. Three reductions:
+
+1. **Inline for small tasks** — a routine feature that matches an existing pattern
+   does one inline scoped pass; no fan-out (boot cost outweighs the benefit).
+2. **Scoped reads** — when fan-out does run, each agent gets an **explicit read
+   scope** (the located domain dir + adjacent subsystems), never "read the whole
+   codebase". Stops agents cold-reading the same shared files.
+3. **Fewer agents** — use only the 2–4 agents that actually apply to the feature;
+   drop the rest. The reuse/adjacency scan stays inline (never an agent).
+
+A cheap inline pre-scan locates the read scope and judges routine-vs-net-new before
+deciding fan-out depth.
+
 ## Files
 
-- `skills/plan/SKILL.md` + `ko/skills/plan/SKILL.md`
-- `skills/build/SKILL.md` + `ko/skills/build/SKILL.md`
+- `skills/plan/SKILL.md` + `ko/skills/plan/SKILL.md`  (A, D, E §3.1)
+- `skills/build/SKILL.md` + `ko/skills/build/SKILL.md`  (B §0, E §1.5)
 
 (English canonical + Korean mirror, edited together per the bilingual-docs rule.)
 
