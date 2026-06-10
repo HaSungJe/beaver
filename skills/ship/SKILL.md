@@ -23,6 +23,8 @@ Self-review the stick's accumulated changes (diff against base) **against `.beav
 - Report findings with their severity → user decides: if fixes are needed, fix via `/beaver:build` and retry; if it passes, proceed to merge. **Do not move on to merge without approval.**
 
 ## 2.5 Full Regression (before merge)
+**Ensure worktree dependencies first** — the stick worktree may lack gitignored dep dirs (created before the deps-guard existed, or `paths.deps` was unset at plan time). Before running tests: for each dir in `paths.deps`, if the main repo has it and the worktree does not, link it (Windows `cmd /c mklink /J`, POSIX `ln -s`) — same as plan §2 step 5; if `paths.deps` is unset but `commands.setup` is defined, run `commands.setup` in the worktree. This makes ship **self-heal** a deps-less worktree deterministically instead of failing at module resolution (or improvising an open-ended `npm install`). Skip if the dep dir is already present.
+
 Before merging into the original branch, run the **entire** `commands.test` suite once in the stick worktree. Since build only looks at each feature's `test_one`, this is the first verification of regression across all accumulated features. **Must be green to proceed to §3.** On failure, stop, fix the cause (`/beaver:build`), and retry — do not merge/push while broken.
 
 ## 3. Return + forward merge + push + destroy

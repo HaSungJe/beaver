@@ -12,6 +12,7 @@ build는 **커밋하지 않는다** — 구현·테스트만 하고 stick 브랜
 **stick 워크트리 안인지 보장(어떤 읽기·쓰기보다 먼저)**: build는 stick 브랜치에 누적하므로 반드시 stick 워크트리 **안에서** 돌아야 한다 — 메인 레포 금지. `.beaver/output/` 스캔이나 report 쓰기 전에 먼저 확인한다(안 그러면 새 세션이 report를 메인에 흘린다).
 - **이미 stick worktree 안이면**(cwd가 `.claude/worktrees/<stick>` 이고 `.beaver/.auto-branch-state.json`에 키 존재) → 진행.
 - **아니면**(새 세션, cwd가 메인) → 메인을 스캔하지 **말 것**. `.claude/worktrees/` 아래에서 대상 기능의 미구현 plan/revision을 담은 stick 워크트리를 찾는다(기능명으로 매칭, stick 이름이 도메인 보유). 정확히 1개면 `EnterWorktree(name=<stick>)`로 재진입, 0개거나 2개+면 중단하고 `/beaver:plan` 먼저 돌리거나 대상을 명시하라고 안내.
+- **의존성 존재 보장**(어느 분기든, 진입 후) → 워크트리는 추적 파일만 체크아웃하므로 gitignore된 dep 디렉터리가 없을 수 있음(이 가드 생기기 전 만든 워크트리거나, plan 시점에 `paths.deps` 미설정). `paths.deps`의 각 디렉터리에 대해 메인엔 있고 워크트리엔 없으면 링크(Windows `cmd /c mklink /J`, POSIX `ln -s`) — plan §2 5번과 동일. `paths.deps` 미설정인데 `commands.setup`은 정의돼 있으면 워크트리에서 `commands.setup` 실행. dep 디렉터리 이미 있으면 생략. 이게 없으면 `test_one`이 모듈 해석에서 실패.
 
 **memory 먼저 읽기**: `.beaver/memory/`(MEMORY.md + 관련 토픽)를 읽어 구현 내내 **최우선** 적용(memory > CLAUDE.md > 기본). 구현 중 사용자가 지속 규칙을 지적하면(이 프로젝트 고유 구조에서 어떤 책임이 어디에 속하는지에 대한 제약) **확인 후 저장**하고 즉시 적용 — 프로토콜 `${CLAUDE_PLUGIN_ROOT}/templates/memory-protocol.md`. CLAUDE.md 규약과 충돌/보강이면 CLAUDE.md 반영도 제안(즉시 수정 X, memory 우선 적용만).
 

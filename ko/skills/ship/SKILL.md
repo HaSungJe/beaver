@@ -23,6 +23,8 @@ stick의 누적 변경분(base 대비 diff)을 **`.beaver/memory/` 규칙 + `CLA
 - 발견 항목을 심각도와 함께 보고 → 사용자 판단: 수정 필요하면 `/beaver:build`로 고친 뒤 재시도, 통과면 병합 진행. **승인 없이 병합으로 넘어가지 않는다.**
 
 ## 2.5 전체 회귀 (병합 전)
+**워크트리 의존성 먼저 보장** — stick 워크트리에 gitignore된 dep 디렉터리가 없을 수 있음(deps-가드 생기기 전 만든 거거나, plan 시점에 `paths.deps` 미설정). 테스트 실행 전: `paths.deps`의 각 디렉터리에 대해 메인엔 있고 워크트리엔 없으면 링크(Windows `cmd /c mklink /J`, POSIX `ln -s`) — plan §2 5번과 동일. `paths.deps` 미설정인데 `commands.setup` 정의돼 있으면 워크트리에서 `commands.setup` 실행. 이로써 ship이 deps 없는 워크트리를 모듈 해석 실패(또는 끝없는 즉흥 `npm install`) 대신 **결정적으로 self-heal**. dep 디렉터리 이미 있으면 생략.
+
 원래 브랜치로 병합하기 전 stick worktree에서 `commands.test` **전체**를 1회 실행한다. build는 기능별 `test_one`만 보므로, 누적 기능 전체의 회귀를 여기서 처음 검증한다. **green이어야 §3 진행.** 실패 시 중단하고 원인 수정(`/beaver:build`) 후 재시도 — 깨진 채로 병합·push하지 않는다.
 
 ## 3. 복귀 + 전진 병합 + push + 파기

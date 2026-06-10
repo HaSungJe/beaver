@@ -26,6 +26,7 @@ Enter the worktree **before any write**. Only the git reads in §0–§1 precede
   2. stick name = `<stick_prefix>/<domain>-<rand6>` (default `stick/...`). Extract the domain from the feature name/request.
   3. Call `EnterWorktree(name=<stick>)` → CC creates `.claude/worktrees/<stick>` + switches the session cwd (base = current HEAD, with baseRef=head from §0).
   4. Record `{ "<stick>": "<origin_branch>" }` in `.beaver/.auto-branch-state.json`.
+  5. **Link dependencies into the worktree** — a fresh worktree checks out tracked files only, so gitignored dependency dirs (`node_modules`, `.venv`, `vendor`, …) are absent and tests fail at module resolution ("can't even start" — this is the ship §2.5 failure). For each dir in `paths.deps`, if the main repo has it and the new worktree does not, link it in: Windows `cmd /c mklink /J "<worktree>\<dep>" "<main>\<dep>"` (junction), POSIX `ln -s "<main>/<dep>" "<worktree>/<dep>"`. The link is durable on disk, so a later `build` resume reuses it — no re-check needed. If the main repo also lacks the dep dir, run `commands.setup` in the worktree instead. **Caveat:** the link points at main's deps; if this stick adds a *new* dependency to the manifest, run `commands.setup` inside the worktree to replace the link with a real, isolated dep dir. Skip entirely if `paths.deps` is unset/empty.
 
 Announce the created worktree, stick, and origin_branch in one line. Both stick and worktree are local-only — remote push happens only in ship.
 
