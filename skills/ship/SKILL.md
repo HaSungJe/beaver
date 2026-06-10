@@ -31,11 +31,15 @@ Proceed **only after §1 commit, §2 code review, and §2.5 full regression are 
 Since the stick worktree is always on the latest schema and only **forward** merges into the original branch, there is no risk of DB auto-sync from checking out an old schema. After approval of the full plan, in order:
 
 1. **`ExitWorktree`** — the session cwd returns to the original repo directory (`origin_branch`). The worktree and stick branch refs remain.
-2. **Forward merge** — in the returned directory:
+2. **Record rollback point** — `pre_merge = git rev-parse HEAD` on `origin_branch`. This is the state to restore if the post-merge verification fails. Nothing has been pushed yet, so a reset here is safe.
+3. **Forward merge** — in the returned directory:
    - If remote tracking exists, `git fetch origin <origin_branch>` → `git merge origin/<origin_branch>` to bring the target's latest into the current branch (on conflict, perform "Conflict Resolution" below inline).
    - `git merge <stick>` to forward-merge the stick into the current branch (on conflict, perform "Conflict Resolution" below inline).
-3. **push** — `git push origin <origin_branch>`. Use `-u` for the first publish of remote tracking.
-4. **destroy** — `git worktree remove .claude/worktrees/<stick>` → `git branch -d <stick>` → remove the key from state.
+4. **Verify after merge (gate before push)** — the merged result is a new combination not tested by §2.5 (which ran in the worktree before the origin merge brought in others' latest changes). If the origin merge brought new commits **or** any conflict was resolved, run the full `commands.test` suite once on the merged `origin_branch`. (If origin was unchanged since the stick branched and there were no conflicts, the §2.5 result still holds — skip.)
+   - **On failure → roll back the merge**: `git reset --hard <pre_merge>` undoes the merge. Nothing was pushed; the stick branch and worktree are intact. **Do not push, do not destroy.** Stop and report which tests failed → user fixes in the stick (`/beaver:build` resumes the worktree) and re-runs `/beaver:ship`.
+   - **On pass** → proceed.
+5. **push** — `git push origin <origin_branch>`. Use `-u` for the first publish of remote tracking.
+6. **destroy** — `git worktree remove .claude/worktrees/<stick>` → `git branch -d <stick>` → remove the key from state.
 
 ### Conflict Resolution (inline auto on merge conflict)
 Performed directly within ship without a separate skill:

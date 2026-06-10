@@ -75,10 +75,26 @@ with agent count while wall-clock only drops ~1/N. Three reductions:
 A cheap inline pre-scan locates the read scope and judges routine-vs-net-new before
 deciding fan-out depth.
 
+### F. `ship` §3 — roll back the merge on post-merge test failure
+§2.5 runs the full regression in the worktree **before** the origin merge. After
+`git merge origin/<origin_branch>` brings in others' latest changes, the merged
+result is a new untested combination; if it breaks, ship currently pushes it anyway.
+Add a post-merge gate:
+
+1. Record `pre_merge = git rev-parse HEAD` before merging (rollback point; nothing
+   pushed yet).
+2. After merge, if the origin merge brought new commits or a conflict was resolved,
+   re-run the full `commands.test` on the merged branch (skip if origin was unchanged
+   and no conflicts — §2.5 still holds).
+3. On failure → `git reset --hard <pre_merge>` undoes the merge; stick + worktree
+   stay intact; do **not** push or destroy. User fixes via `/beaver:build` (resumes
+   the worktree) and re-runs `/beaver:ship`.
+
 ## Files
 
 - `skills/plan/SKILL.md` + `ko/skills/plan/SKILL.md`  (A, D, E §3.1)
 - `skills/build/SKILL.md` + `ko/skills/build/SKILL.md`  (B §0, E §1.5)
+- `skills/ship/SKILL.md` + `ko/skills/ship/SKILL.md`  (F §3)
 
 (English canonical + Korean mirror, edited together per the bilingual-docs rule.)
 

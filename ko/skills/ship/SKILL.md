@@ -31,11 +31,15 @@ stick의 누적 변경분(base 대비 diff)을 **`.beaver/memory/` 규칙 + `CLA
 stick worktree는 항상 최신 스키마이고 원래 브랜치로 **전진** 병합만 하므로, 옛 스키마 체크아웃에 의한 DB 자동싱크 위험이 없다. 전체 계획 승인 후 순서대로:
 
 1. **`ExitWorktree`** — 세션 cwd가 원래 repo 디렉터리(`origin_branch`)로 복귀. worktree·stick 브랜치 ref는 남는다.
-2. **전진 병합** — 복귀한 디렉터리에서:
+2. **롤백 지점 기록** — `origin_branch`에서 `pre_merge = git rev-parse HEAD`. 병합 후 검증 실패 시 되돌릴 상태. 아직 push 전이라 여기서 reset은 안전하다.
+3. **전진 병합** — 복귀한 디렉터리에서:
    - 원격 추적 있으면 `git fetch origin <origin_branch>` → `git merge origin/<origin_branch>` 로 대상 최신을 현재 브랜치에 편입(충돌 시 아래 「충돌 해결」 인라인 수행).
    - `git merge <stick>` 으로 stick을 현재 브랜치에 전진 병합(충돌 시 아래 「충돌 해결」 인라인 수행).
-3. **push** — `git push origin <origin_branch>`. 원격 추적 첫 발행이면 `-u`.
-4. **파기** — `git worktree remove .claude/worktrees/<stick>` → `git branch -d <stick>` → state에서 키 제거.
+4. **병합 후 검증 (push 전 게이트)** — 병합 결과는 §2.5가 테스트하지 않은 새 조합이다(§2.5는 origin 최신이 편입되기 전 워크트리에서 돌았음). origin 병합이 새 커밋을 가져왔거나 충돌을 해결했다면, 병합된 `origin_branch`에서 전체 `commands.test`를 1회 돌린다. (stick 분기 후 origin 변동 없고 충돌도 없었으면 §2.5 결과가 유효 — 생략.)
+   - **실패 시 → 병합 롤백**: `git reset --hard <pre_merge>` 로 병합을 되돌린다. push 안 했고 stick 브랜치·worktree 그대로다. **push·파기 금지.** 중단하고 실패 테스트를 보고 → 사용자가 stick에서 수정(`/beaver:build`가 워크트리 재진입) 후 `/beaver:ship` 재실행.
+   - **통과 시** → 진행.
+5. **push** — `git push origin <origin_branch>`. 원격 추적 첫 발행이면 `-u`.
+6. **파기** — `git worktree remove .claude/worktrees/<stick>` → `git branch -d <stick>` → state에서 키 제거.
 
 ### 충돌 해결 (병합 충돌 시 인라인 자동)
 별도 스킬 없이 ship 안에서 직접 수행한다:
