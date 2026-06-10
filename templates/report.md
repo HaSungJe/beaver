@@ -14,7 +14,7 @@
 <!-- List the test files/cases authored (build writes tests but does not run them). -->
 
 ## Verification
-<!-- The reading/reasoning check that the implementation matches the plan/spec intent. The authoritative run is ship's post-merge full regression. -->
+<!-- The reading/reasoning check that the implementation matches the plan/spec intent. The authoritative run is `/beaver:test` after ship. -->
 
 ## Remaining Issues
 <!-- If none, write "None" -->

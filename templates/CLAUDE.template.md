@@ -26,7 +26,8 @@ This project is managed with [Beaver](https://github.com/HaSungJe/beaver). Each 
 **Flow**:
 - **plan** — from the branch you were working on (main/develop, etc.), create an isolated `stick` under `.claude/worktrees/` and move the session there (if already inside a stick, accumulate into it; don't create a new one).
 - **build** — writes the plan's test cases as real test files + implements (no test run), no commit (accumulates into the stick).
-- **ship** — commit → code review → return to the original branch, forward merge → full regression on that checkout → push → destroy the worktree (ship resolves merge conflicts inline).
+- **ship** — commit → code review → integrate origin into the stick (in the worktree) → return to the original branch, fast-forward, push → destroy the worktree (ship resolves merge conflicts inline; ship runs no tests).
+- **test** — `/beaver:test` runs the full regression (`commands.test`) on a real checkout with a remote (the original branch after ship); standalone, never inside a stick worktree.
 - **stick and worktree are local-only** — push happens only in ship, to the original branch.
 
 **Locations**: config `.beaver/config.json` · artifacts `.beaver/output/{spec,plan,revision,report,review,refactor}/` (spec/plan/revision/report live under `<domain>/`, review is flat per stick, refactor is flat per topic) · memory `.beaver/memory/` (index MEMORY.md; anything derivable from code is not stored) · state dotfile `.beaver/.auto-branch-state.json` (stick→original-branch mapping) · stick worktrees `.claude/worktrees/`.
@@ -39,7 +40,7 @@ This project is managed with [Beaver](https://github.com/HaSungJe/beaver). Each 
 ## ⚠️ Cautions
 <!-- What to include: commands Claude must never (or only conditionally) run (starting the server, migrations, deployment, etc.) and their exceptions.
      Depth: 3-5 lines. Delete the section if there are no project operating rules.
-     e.g. Only the user runs `npm run`/`gradle bootRun`-type commands. Test commands are run by Claude at the ship full-regression stage (build writes tests but does not run them). -->
+     e.g. Only the user runs `npm run`/`gradle bootRun`-type commands. Test commands are run by Claude via `/beaver:test` (build writes tests but does not run them). -->
 
 ## Architecture
 <!-- What to include: stack (framework + version + core dependencies) · directory layout (with role notes) · layer boundaries (who calls whom)

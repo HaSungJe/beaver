@@ -9,7 +9,7 @@
     {
       "name": "beaver",
       "source": "./",
-      "description": "Analyze your codebase into a living convention spec, then plan, build with TDD, and ship to your working branch via isolated worktrees — with inline merge-conflict resolution and convention-guided refactoring, all grounded in that spec. Language-agnostic.",
+      "description": "Analyze your codebase into a living convention spec, then plan, build, ship to your working branch via isolated worktrees, and run the full regression on demand — with inline merge-conflict resolution and convention-guided refactoring, all grounded in that spec. Language-agnostic.",
       "displayName": "Beaver",
       "version": "0.3.1",
       "author": {

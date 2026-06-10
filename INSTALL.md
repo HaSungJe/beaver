@@ -16,7 +16,7 @@ Install via the Claude Code plugin hub. After installation it works immediately,
 
 ### ⚠️ Behavior and Security Notice
 
-beaver's hooks **do not execute any project test or build command**. The only PostToolUse hook (`scripts/on-doc-written.js`) validates the structure of saved plan/spec/revision documents; it runs no shell command. Test execution happens only inside the ship skill (the single post-merge full regression), via a `Bash` call that is never auto-approved and always prompts. The `commands` values in `.beaver/config.json` are detected and filled by `/beaver:analyze`, **always recorded only after user confirmation**, and can be reviewed/edited directly.
+beaver's hooks **do not execute any project test or build command**. The only PostToolUse hook (`scripts/on-doc-written.js`) validates the structure of saved plan/spec/revision documents; it runs no shell command. Test execution happens only inside the `/beaver:test` skill (the standalone full regression), via a `Bash` call that is never auto-approved and always prompts. The `commands` values in `.beaver/config.json` are detected and filled by `/beaver:analyze`, **always recorded only after user confirmation**, and can be reviewed/edited directly.
 
 **`auto_approve` (default on).** A PreToolUse hook (`scripts/auto-approve.js`) **auto-approves in-project file edits** (`Write`/`Edit`/`MultiEdit`/`NotebookEdit`) so Claude Code stops prompting on every plan/build/ship step. **Shell commands (`Bash`) are never auto-approved** — tests, `git push`, and any other command still go through normal confirmation, as do edits to files outside the project. To restore per-edit confirmation, set `"auto_approve": false` in `.beaver/config.json`.
 

@@ -22,32 +22,26 @@ Self-review the stick's accumulated changes (diff against base) **against `.beav
 - Write **`.beaver/output/review/<stick>-review-<YYMMDD>.md`** based on `${CLAUDE_PLUGIN_ROOT}/templates/review.md`. `<stick>` replaces `/` in the branch name with `-` (e.g., `stick/user-a3f9c2` → `stick-user-a3f9c2`); domain-agnostic, one per ship. For a re-review on the same day, use `-<N>`.
 - Report findings with their severity → user decides: if fixes are needed, fix via `/beaver:build` and retry; if it passes, proceed to merge. **Do not move on to merge without approval.**
 
-## 3. Return + forward merge + full regression + push + destroy
-Proceed **only after §1 commit and §2 code review are complete**. `origin_branch` = the value mapped to the current stick key in `.beaver/.auto-branch-state.json` (= the original work branch name). Full regression runs **after** the merge, on the `origin_branch` checkout (step 4) — build runs no tests, so this is the single gate that verifies all accumulated features together.
+## 3. Merge (in worktree) → return → fast-forward + push → destroy
+Proceed **only after §1 commit and §2 code review are complete**. `origin_branch` = the value mapped to the current stick key in `.beaver/.auto-branch-state.json` (= the original work branch name). ship **does not run the test suite** — after ship, verify the deployed result by running `/beaver:test` on `origin_branch` (it has a remote and real dependencies).
 
-Since the stick worktree is always on the latest schema and only **forward** merges into the original branch, there is no risk of DB auto-sync from checking out an old schema. After approval of the full plan, in order:
+The real merge/integration (and any conflict resolution) happens **inside the worktree on the stick branch, before returning** — that is where you have full feature context; after returning, the original branch only fast-forwards. Since the stick is always on the latest schema and only **forward** advances the original branch, there is no risk of checking out an old schema. After approval, in order:
 
-1. **`ExitWorktree`** — the session cwd returns to the original repo directory (`origin_branch`). The worktree and stick branch refs remain.
-2. **Record rollback point** — `pre_merge = git rev-parse HEAD` on `origin_branch`. This is the state to restore if the post-merge verification fails. Nothing has been pushed yet, so a reset here is safe.
-3. **Forward merge** — in the returned directory:
-   - If remote tracking exists, `git fetch origin <origin_branch>` → `git merge origin/<origin_branch>` to bring the target's latest into the current branch (on conflict, perform "Conflict Resolution" below inline).
-   - `git merge <stick>` to forward-merge the stick into the current branch (on conflict, perform "Conflict Resolution" below inline).
-4. **Full regression after merge (gate before push)** — now that the stick (and any origin updates) are merged into `origin_branch`, run the **entire** `commands.test` suite once on the merged `origin_branch` checkout. This is the **first and only** full regression across all accumulated features — build runs no tests, so everything is verified together here. The merge-target checkout is a normal developer checkout with real dependencies, so module resolution is reliable (unlike the worktree). **Must be green to push.**
-   - **On failure → roll back the merge**: `git reset --hard <pre_merge>` undoes the merge. Nothing was pushed; the stick branch and worktree are intact. **Do not push, do not destroy.** Stop and report which tests failed → user fixes in the stick (`/beaver:build` resumes the worktree) and re-runs `/beaver:ship`.
-   - **On pass** → proceed.
-5. **push** — `git push origin <origin_branch>`. Use `-u` for the first publish of remote tracking.
-6. **destroy** — `git worktree remove .claude/worktrees/<stick>` → `git branch -d <stick>` → remove the key from state.
+1. **Integrate origin's latest into the stick (in the worktree)** — still inside the stick worktree, on the stick branch: if remote tracking exists, `git fetch origin <origin_branch>` → `git merge origin/<origin_branch>` to bring the target's latest into the stick (on conflict, perform "Conflict Resolution" below inline — you have full feature context here). The stick now holds origin's latest + all accumulated work as a clean forward state. (If `origin_branch` has no remote, skip the fetch/merge — the stick already descends from it.)
+2. **Return** — `ExitWorktree` → the session cwd returns to the original repo directory (on `origin_branch`). Record `pre_ff = git rev-parse HEAD` (the point to `git reset --hard` back to if you need to undo the local fast-forward before pushing).
+3. **Fast-forward + push** — `git merge --ff-only <stick>` advances `origin_branch` to the stick. This is a **guaranteed fast-forward** (the stick already incorporated origin's latest in step 1), so no conflict is possible here. Then `git push origin <origin_branch>` (use `-u` for the first publish). *If the `--ff-only` is rejected because origin advanced again in the gap, re-run `/beaver:ship` — step 1 will fetch and integrate the new origin first.*
+4. **Destroy** — `git worktree remove .claude/worktrees/<stick>` → `git branch -d <stick>` → remove the key from state.
 
 ### Conflict Resolution (inline auto on merge conflict)
 Performed directly within ship without a separate skill:
 1. **Understand both intents** — for each conflict hunk, determine the intent of the ours (current branch) / theirs (stick or origin) changes, grounded in the code and plan/spec.
 2. **Integrate per conventions** — integrate while preserving both intents, in line with `.beaver/memory/` rules (top priority) + `CLAUDE.md` conventions. Do not discard one side (if both are meaningful, combine them).
 3. **Clean up markers** — confirm zero remaining conflict markers with `git diff --check`.
-4. **Verify** — confirm the integration is coherent by reading the resolved hunks. Test execution is deferred to the §3 step 4 full regression, which runs once the merge completes.
+4. **Verify** — confirm the integration is coherent by reading the resolved hunks. Test execution is deferred to `/beaver:test`, run on `origin_branch` after ship.
 5. **Merge commit after approval** — report the integrated result to the user and commit after approval. If risky, offer `git merge --abort`.
 
 ## 4. Report
-Commit, review, and merge results. The next step is `/beaver:plan`.
+Commit, review, and merge results. Next: `/beaver:test` on `origin_branch` to verify the deployed result, then `/beaver:plan` for the next feature.
 
 ## Notes
 Do not run without approval. `--no-verify` and force push only on explicit request (with impact disclosed).

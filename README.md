@@ -10,7 +10,7 @@ A Claude Code plugin that first analyzes your codebase to produce a project conv
 - **Consistency** — every artifact follows the `CLAUDE.md` conventions derived from the actual code.
 - **Standard procedure** — for every feature, plan → build → ship repeats as the same flow, and ship merges & pushes directly into the original working branch.
 - **Parallel work** — sticks are isolated under `.claude/worktrees/` (per-session cwd switching), so running different features simultaneously across sessions does not conflict.
-- **Regression prevention** — document structure validation + a single full regression (`commands.test`) run **after the merge into the original branch** (on the developer-maintained checkout, never the worktree) + inline merge conflict resolution. **Where tests run**: build only **writes** tests — it does not run them; the one and only test execution is ship's post-merge full regression.
+- **Regression prevention** — document structure validation + a standalone full regression (`/beaver:test` → `commands.test`) run on a real checkout (the original branch after ship, never the worktree) + inline merge conflict resolution. **Where tests run**: build only **writes** tests — it does not run them; the one and only test execution is `/beaver:test`.
 - **Rule accumulation (memory)** — user corrections during work accumulate in `.beaver/memory/` and are applied with **top priority** (memory > CLAUDE.md > default) in later work. The same correction is never repeated.
 - **Multi-language support** — it detects the stack and records test/build commands in `.beaver/config.json`, so it stays language-agnostic.
 - **Review checkpoints** — plan's interactive decision gate, ship's code review, and approval-based commit/merge/push mean a human verifies every step.
@@ -45,7 +45,8 @@ Each stage has two entry points — a **slash command** and **natural language**
 | Analyze (independent · once) | **Analyze** | `/beaver:analyze` | "analyze the codebase" | Generates/updates `CLAUDE.md` + `docs/` conventions + `.beaver/config.json` from measured code (or framework standards if absent), merging & applying any existing CLAUDE.md/memory |
 | Plan & implement | **Plan** | `/beaver:plan <feature>` | "plan <feature>" | Auto-detects new vs. change → creates & enters an isolated stick worktree → parallel deep analysis of the codebase (new vs. addition detection; technical review if new) → interactive one-question-at-a-time decisions → auto-generates spec + writes plan (revision if a change) (validation hook on save). If a new convention area, a draft document |
 | Plan & implement | **Build** | `/beaver:build` | "start work" | Parallel preparation fan-out → writes the plan's test cases as real test files + implements per conventions (**no test execution**) → report. No test run, no commit, no full regression |
-| Ship | **Ship** | `/beaver:ship` | "commit and ship" | Approval-based commit of the stick's accumulation → code review (memory · conventions · intent · draft confirmation, review document) → return to the original branch · forward merge → **single full regression on the merged checkout** → push → destroy the worktree. Inline resolution on conflict |
+| Ship | **Ship** | `/beaver:ship` | "commit and ship" | Approval-based commit of the stick's accumulation → code review (memory · conventions · intent · draft confirmation, review document) → integrate origin into the stick (in the worktree) → return to the original branch · fast-forward · push → destroy the worktree. Inline resolution on conflict |
+| Verify (independent) | **Test** | `/beaver:test` | "run the full tests" | Runs the **full regression** (`commands.test`) once on the current checkout. Standalone — run it on a branch with a remote (the original branch after ship), never inside a stick worktree. Reports pass/fail; no source edits |
 | Refactor (independent) | **Refactor** | `/beaver:refactor` | "group similar features together" | Confirm green baseline → identify targets → write & approve plan → small-unit extraction · replacement · cleanup + per-step tests → prove behavior preservation via full regression. Commits are left to ship |
 
 > Names may change before stabilization (0.x).
@@ -60,9 +61,11 @@ analyze        # independent · once per project (generates convention docs)
 plan → build   # one set · repeated per feature in a stick worktree (accumulates without committing)
                #   plan: creates .claude/worktrees/<stick> isolated from the current branch HEAD + enters the session
 
-ship           # one set · commit → code review → ExitWorktree return
-               #   → forward merge into the original branch → full regression on that checkout → push → destroy worktree
- └ inline conflict   #   on merge conflict, ship handles it directly — integrate per conventions (the post-merge regression confirms the result)
+ship           # one set · commit → code review → integrate origin into the stick (in the worktree)
+               #   → ExitWorktree return → fast-forward the original branch → push → destroy worktree
+ └ inline conflict   #   on merge conflict, ship handles it directly in the worktree — integrate per conventions
+
+test           # independent · run /beaver:test on the original branch (with remote) after ship → full regression
 
 refactor       # independent · when needed (plan → execute, behavior preserved)
 ```
@@ -104,12 +107,12 @@ This is what each skill actually does. **All git/file operations, tests, and app
 - **Mode · target** — if an argument is given, prefer change (`*-revision-*.md` not yet reflected in report for that round) → new (`*-plan.md` present with no matching `*-report.md`). With no argument, it scans `.beaver/output/`: 0 candidates stops · 1 proceeds · 2+ asks the user to choose (no automatic batch implementation of multiple items).
 - **Prerequisite gate** — new requires `plan.md` to exist · no unanswered decisions · all prerequisite items `[x]` · `validate-plan.js` passing (blocks if required sections, unanswered items, or incomplete items exist). change requires the latest `revision-*.md` · nothing unanswered · prerequisite items `[x]`.
 - **① Preparation (parallel)** — before implementing, quickly finish plan/revision analysis · mapping the existing code to touch · concretizing test cases · identifying reuse as a Workflow fan-out. The implementation itself (② onward) is sequential.
-- **② Write tests + implement** — write the plan's "test cases" as real test files at the CLAUDE.md testing strength, then implement per conventions to satisfy them. **build does not execute any test** — there is no red/green loop and no self-heal. All test execution is deferred to ship's single post-merge full regression.
-- **Why build doesn't run tests** — the stick worktree carries no real, developer-maintained dependency dirs (`node_modules`/`.venv`/`vendor` are gitignored and are never linked into the worktree), so module resolution there is unreliable and a mid-build run produces false failures. build therefore authors the test files + implementation only; verification happens at ship on the merge-target checkout, which has real deps.
+- **② Write tests + implement** — write the plan's "test cases" as real test files at the CLAUDE.md testing strength, then implement per conventions to satisfy them. **build does not execute any test** — there is no red/green loop and no self-heal. All test execution is deferred to `/beaver:test`.
+- **Why build doesn't run tests** — the stick worktree carries no real, developer-maintained dependency dirs (`node_modules`/`.venv`/`vendor` are gitignored and are never linked into the worktree), so module resolution there is unreliable and a mid-build run produces false failures. build therefore authors the test files + implementation only; verification happens via `/beaver:test` on the original branch (real deps) after ship.
 - **Draft sync** — if a draft convention document drifts from the code, update it to match the code (the marker stays; confirmation happens at ship).
 - **Stuck fallback** — if while implementing you find the plan/approach itself is wrong (not just a local code mistake), build does not force it through → isolate the root cause → **return to plan** to re-examine the approach → update plan/revision → re-enter build.
 - **Report** — for new, generates `report/<domain>/<feature>-report.md` from `templates/report.md`; for change, appends `## Change - <YYMMDD>-<N>` at the end.
-- **Verification before completion** — build does not run tests, so it confirms by inspection that the implementation and the tests it wrote match the plan/spec intent (the authoritative run is ship's full regression). build **does not commit** and accumulates on the stick.
+- **Verification before completion** — build does not run tests, so it confirms by inspection that the implementation and the tests it wrote match the plan/spec intent (the authoritative run is `/beaver:test` after ship). build **does not commit** and accumulates on the stick.
 
 ### 🚀 `/beaver:ship` — Commit + merge & push to the original branch + destroy worktree
 
@@ -121,9 +124,14 @@ This is what each skill actually does. **All git/file operations, tests, and app
   - **Intended-behavior check** — check for omissions and misimplementation
   - **Draft convention confirmation** — verify the `<!-- beaver:draft -->` document matches the code, then remove the marker and confirm
   - Record the results in `.beaver/output/review/<stick>-review-<YYMMDD>.md` from `templates/review.md` → report findings → "needs fixes" goes to build, "pass" merges (no merge without approval).
-- **③ Return + forward merge + full regression + push + destroy** — since the stick worktree is always the latest schema and merges are forward-only into the original branch, there is no risk of checking out an old schema. `ExitWorktree` returns to the original directory (`origin_branch`) → record the rollback point (`pre_merge = git rev-parse HEAD`) → `git fetch origin <origin_branch>` → `git merge origin/<origin_branch>` to incorporate the latest → `git merge <stick>` to forward-merge (ship resolves inline on conflict) → **run `commands.test` once on the merged `origin_branch` checkout — must be green** (on failure, `git reset --hard <pre_merge>` rolls back, nothing is pushed, and you fix in the stick via `/beaver:build`) → `git push origin <origin_branch>` → `git worktree remove .claude/worktrees/<stick>` + `git branch -d <stick>` + remove the state key.
-- **Single regression gate** — this post-merge `commands.test` is the **one and only** automated test execution in the entire analyze → plan → build → ship → refactor flow. It runs after the forward-merge on the original-branch checkout (real, developer-maintained deps), validating the merged result of all accumulated stick features together against a trustworthy environment before push.
-- **Inline conflict resolution** — on a merge conflict, ship handles it directly with no separate skill: grasp the ours/theirs intent → integrate per memory · CLAUDE.md conventions (no arbitrary discarding) → clean up markers with `git diff --check` → confirm the integration reads coherently (the post-merge full regression is the authoritative check) → merge commit after approval (`git merge --abort` if risky).
+- **③ Merge (in worktree) → return → fast-forward + push + destroy** — the real merge happens **inside the worktree, before returning** (that is where you have feature context): still on the stick branch, `git fetch origin <origin_branch>` → `git merge origin/<origin_branch>` to integrate the target's latest into the stick (ship resolves inline on conflict). The stick now holds origin's latest + all accumulated work. Then `ExitWorktree` returns to the original directory (`origin_branch`) → `git merge --ff-only <stick>` advances it (a **guaranteed fast-forward** — no conflict possible) → `git push origin <origin_branch>` → `git worktree remove .claude/worktrees/<stick>` + `git branch -d <stick>` + remove the state key. **ship runs no tests** — verify with `/beaver:test` afterward.
+- **Inline conflict resolution** — on a merge conflict (only at the in-worktree `merge origin/<origin_branch>` step), ship handles it directly with no separate skill: grasp the ours/theirs intent → integrate per memory · CLAUDE.md conventions (no arbitrary discarding) → clean up markers with `git diff --check` → confirm the integration reads coherently → merge commit after approval (`git merge --abort` if risky).
+
+### 🧪 `/beaver:test` — Full regression (standalone)
+
+- **Role** — runs the project's **entire** test suite (`commands.test`) once and reports. This is the single full-regression check, separated out of ship. build writes tests but never runs them; this is where the accumulated tests are actually executed.
+- **Preconditions** — `commands.test` must be configured (else → analyze). **Run on a branch that has a remote** (checked via the branch's upstream ref) — this deliberately excludes local-only stick worktrees. Regression runs on a real developer checkout (the original branch after ship), which has its dependencies installed.
+- **Run + report** — execute `commands.test` on the current checkout → **green**: report the pass (suite/count summary if available); **red**: report exactly which tests failed (runner output quoted). The fix path is `/beaver:plan`→`/beaver:build` on the offending feature, ship again, then re-run `/beaver:test`. It only runs and reports — no source edits.
 
 ### ♻️ `/beaver:refactor` — Plan-based structural cleanup (independent)
 
@@ -153,7 +161,7 @@ When a user corrects a convention or expresses a preference during work (e.g. "h
 - **File-existence-based prerequisites** — each stage requires the previous artifact to enter. If absent, it explains what is missing and stops.
 - **Automatic validation hook** (`hooks/hooks.json`, PostToolUse `Write|Edit`) —
   - `on-doc-written.js`: structure validation when a plan/spec/revision document is saved (blocks on missing required sections). **If Node is absent, the hook is a no-op** and document structure is validated manually by the skill.
-  - **No per-save test hook** — beaver's hooks never run the project's test/build commands. Test regression is enforced exactly once, by ship, after the merge (there is no save-triggered test run; the former self-heal hook was removed in this revision).
+  - **No per-save test hook** — beaver's hooks never run the project's test/build commands. Test regression runs only when you invoke `/beaver:test` (there is no save-triggered test run; the former self-heal hook was removed in this revision).
 - **Auto-approve hook** (`auto-approve.js`, PreToolUse, **on by default**) — auto-approves in-project file edits (`Write`/`Edit`/`MultiEdit`/`NotebookEdit`) so Claude Code does not prompt on every plan/build/ship step. **Shell commands (`Bash`) are never auto-approved** — tests, `git push`, etc. still prompt, as do edits outside the project. Set `"auto_approve": false` in `.beaver/config.json` to restore per-edit confirmation.
 - **Approval gates** — commit · merge · push · conflict resolution · review pass always run only after user confirmation.
 - **Rule memory** — user rules in `.beaver/memory/` take priority over `CLAUDE.md` (see above).
@@ -169,8 +177,8 @@ When a user corrects a convention or expresses a preference during work (e.g. "h
   "project_name": "...",
   "stack": ["..."],                                       // detected stack id(s)
   "commands": {
-    "test": "...",                                        // full regression (ship, after merge onto original branch)
-    "test_one": "...",                                    // single feature — scopes build's test files + ship's inline conflict check; not auto-run by build. $NAME is substituted
+    "test": "...",                                        // full regression — run by /beaver:test
+    "test_one": "...",                                    // single feature — scopes build's test files; not auto-run by build. $NAME is substituted
     "build": "...",
     "lint": "..."
   },
@@ -200,8 +208,8 @@ beaver/
 │   └── auto-approve.js      #   hook: auto-approve in-project file edits (auto_approve, default on; Bash never)
 ├── agents/                  # fan-out by analyze when measuring (tools: Glob/Grep/Read)
 │   ├── architecture-mapper.md  ·  convention-scout.md  ·  test-pattern-analyzer.md
-├── skills/                  # 5 skills (slash + auto-trigger)
-│   ├── analyze/  plan/  build/  ship/  refactor/
+├── skills/                  # 6 skills (slash + auto-trigger)
+│   ├── analyze/  plan/  build/  ship/  test/  refactor/
 └── templates/               # convention · artifact forms (referenced by skills as ${CLAUDE_PLUGIN_ROOT}/templates/*)
     ├── CLAUDE.template.md    #   CLAUDE.md convention template (Beaver settings block + section guide)
     ├── memory-protocol.md    #   user rule memory protocol
