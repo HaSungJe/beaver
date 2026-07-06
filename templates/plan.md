@@ -22,19 +22,39 @@
 ---
 
 ## Design
-<!-- Design per layer following the CLAUDE.md convention. Reflect spec decisions. Put key signatures/structures in code blocks. -->
+<!-- Design per layer following the CLAUDE.md convention. Reflect spec decisions.
+     REQUIRED: every layer section below carries the ACTUAL code to be written, in fenced code blocks —
+     full content for a new file, the changed part (with enough surrounding context) for a modified file.
+     No pseudocode, no signature-only stubs: the reader must grasp the implementation at a glance from the plan alone.
+     The validator rejects a Design section without code blocks. -->
 
 ### Input/Validation (DTO·Schema)
 <!-- Derive from code evidence (path:line) the input-validation mechanism this project actually uses, and name it exactly as the project does. Omit if absent. Throughout this section, describe what the code shows rather than assuming any particular framework's constructs. -->
 
+```{language}
+// {path} — the actual code to be written
+```
+
 ### Data Access (Repository/DAO)
 <!-- Derive from code evidence (path:line) the data-access mechanism this project actually uses, and name it exactly as the project does. Omit if absent. -->
+
+```{language}
+// {path} — the actual code to be written
+```
 
 ### Business Logic (Service)
 <!-- Derive from code evidence (path:line) where this project actually holds business logic, and name it exactly as the project does. Omit if absent. -->
 
+```{language}
+// {path} — the actual code to be written
+```
+
 ### Entry Point (Controller/Handler)
 <!-- Derive from code evidence (path:line) the entry-point mechanism this project actually uses, and name it exactly as the project does. Omit if absent. -->
+
+```{language}
+// {path} — the actual code to be written
+```
 
 
 ---

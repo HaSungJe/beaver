@@ -13,11 +13,11 @@ if (!rel) process.exit(0);
 let kind = null;
 if (/\.beaver\/output\/plan\/.+\.md$/.test(rel) || /-plan\.md$/.test(rel)) kind = 'plan';
 else if (/\.beaver\/output\/spec\/.+\.md$/.test(rel) || /-spec\.md$/.test(rel)) kind = 'spec';
-else if (/\.beaver\/output\/revision\/.+\.md$/.test(rel) || /-revision-.+\.md$/.test(rel)) kind = 'plan'; // revision uses plan-like checks
+else if (/\.beaver\/output\/revision\/.+\.md$/.test(rel) || /-revision-.+\.md$/.test(rel)) kind = 'revision';
 if (!kind) process.exit(0);
 
 const cfg = loadConfig();
-const res = validate(abs, requiredFromConfig(cfg, kind === 'spec' ? 'spec' : 'plan'));
+const res = validate(abs, requiredFromConfig(cfg, kind));
 
 res.warnings.forEach((w) => console.log(`[beaver:warn] ${w}`));
 if (!res.ok) {

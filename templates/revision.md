@@ -17,6 +17,19 @@
 |------|-------------|-------------|
 | `<path>` | modify/add/delete |  |
 
+## Code Changes
+<!-- REQUIRED: the actual code as it will be changed, per affected file — the changed part before → after
+     (full content for a new file, omit "before" then). No pseudocode, no signature-only stubs:
+     the reader must see the real change at a glance from this document alone. -->
+
+```{language}
+// {path} — before
+```
+
+```{language}
+// {path} — after (the actual code to be written)
+```
+
 ## Decisions
 <!--
   If the change involves anything that cannot be decided from CLAUDE.md alone, list it with - [ ]. The answers must be filled in before entering build.
