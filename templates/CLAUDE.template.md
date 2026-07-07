@@ -6,34 +6,9 @@
        · Delete any unused section entirely (don't leave an empty header).
        · Fill each section based on the "what to include / depth" in its comment. If a rule fits in 1-2 lines, put it in the CLAUDE.md body;
          for deep rules that need example code, tables, or step-by-step procedures, split them into docs/<topic>.md and leave only a `→ Details:` link in the body.
-       · Keep the "## Beaver Settings" block verbatim (it is essential to Beaver's operation).
      Completeness bar: each item must pass "Can I build one new domain to convention using only this rule?" -->
 
 # CLAUDE.md
-
-## Beaver Settings
-
-This project is managed with [Beaver](https://github.com/HaSungJe/beaver). Each stage is triggered via slash command or natural language (identical behavior):
-
-| Stage | Slash | Natural language |
-|---|---|---|
-| Analyze (once) | `/beaver:analyze` | "코드베이스 분석" |
-| Plan | `/beaver:plan <feature>` | "<기능명> 기획", "기능 생성/수정" |
-| Build | `/beaver:build` | "작업 시작", "구현" |
-| Ship | `/beaver:ship` | "커밋하고 배포", "작업 마무리" |
-| Refactor | `/beaver:refactor` | "비슷한 기능 묶기", "중복 정리" |
-
-**Flow**:
-- **plan** — from the branch you were working on (main/develop, etc.), create an isolated `stick` under `.claude/worktrees/` and move the session there (if already inside a stick, accumulate into it; don't create a new one).
-- **build** — writes the plan's test cases as real test files + implements (no test run), no commit (accumulates into the stick).
-- **ship** — code review → commit → integrate origin into the stick (in the worktree) → return to the original branch, fast-forward, push → destroy the worktree (ship resolves merge conflicts inline; ship runs no tests).
-- **test** — `/beaver:test` runs the full regression (`commands.test`) on a real checkout with a remote (the original branch after ship); standalone, never inside a stick worktree.
-- **stick and worktree are local-only** — push happens only in ship, to the original branch.
-
-**Locations**: config `.beaver/config.json` · artifacts `.beaver/output/{spec,plan,revision,report,review,refactor}/` (spec/plan/revision/report live under `<domain>/`, review is flat per stick, refactor is flat per topic) · memory `.beaver/memory/` (index MEMORY.md; anything derivable from code is not stored) · state dotfile `.beaver/.auto-branch-state.json` (stick→original-branch mapping) · stick worktrees `.claude/worktrees/`.
-**Priority**: user rules in `.beaver/memory/` take **precedence** over this document (CLAUDE.md). User corrections made during work are confirmed and then accumulated into memory, and reflected in this document when needed (on conflict, memory wins).
-
----
 
 <!-- Below are the conventions analyze fills in. Delete sections not in the stack; split deep ones into docs/. -->
 

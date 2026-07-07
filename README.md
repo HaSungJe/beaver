@@ -83,10 +83,10 @@ This is what each skill actually does. **All git/file operations, tests, and app
 > Principle: **if code exists, the code is the rule; if not, the framework standard is the rule.**
 
 - **Memory first** — on entry it reads `.beaver/memory/` (MEMORY.md + topics) first to apply user rules with top priority, and proposes formally reconciling unapplied entries into `CLAUDE.md`/`docs/`.
-- **Merge existing CLAUDE.md** — if present, confirm before overwriting; preserve unique rules and refresh only the "Beaver settings" block.
+- **Merge existing CLAUDE.md** — if present, confirm before overwriting; preserve unique rules and remove any legacy "Beaver settings" block (the plugin itself now provides that behavior).
 - **Stack detection** — identifies the framework and test/build commands from the manifest (`package.json`/`pom.xml`/`build.gradle`/`pyproject.toml`/`go.mod`/`Cargo.toml`), with user confirmation. Decision points not settled by code are asked, with a recommendation, only when there are two or more alternatives — derived from what this project actually leaves open (with code evidence where it exists); the questions follow the detected framework's idiomatic baseline rather than a fixed catalog.
 - **Analysis** — for existing code, it reads representative files and extracts rules with evidence (path:line) (using `agents/`' architecture-mapper · convention-scout · test-pattern-analyzer in Workflow-parallel / Task-distributed / sequential fashion). For new, empty projects it adopts the framework's standard structure. **Fabrication prevention**: assets with zero usages are read by signature only, and infrastructure that is implemented but unapplied is honestly labeled as "unapplied/convention".
-- **Artifacts** — root `CLAUDE.md` (`templates/CLAUDE.template.md` structure, fixed "Beaver settings" block) + `docs/<topic>.md` (only the ones used among architecture · conventions · data-layer · error-handling · api · testing) + `.beaver/config.json` (stack · commands · paths · branch). Every rule is labeled with its source (measured path / "standard: 〈framework〉 recommendation" / "choice: user").
+- **Artifacts** — root `CLAUDE.md` (`templates/CLAUDE.template.md` structure) + `docs/<topic>.md` (only the ones used among architecture · conventions · data-layer · error-handling · api · testing) + `.beaver/config.json` (stack · commands · paths · branch). Every rule is labeled with its source (measured path / "standard: 〈framework〉 recommendation" / "choice: user").
 - analyze itself **does not create branches or run tests** — it only records values into config (stick worktree creation and test execution belong to plan/build/ship).
 
 ### 📝 `/beaver:plan <feature>` — Planning (spec → plan / revision)
@@ -211,7 +211,7 @@ beaver/
 ├── skills/                  # 6 skills (slash + auto-trigger)
 │   ├── analyze/  plan/  build/  ship/  test/  refactor/
 └── templates/               # convention · artifact forms (referenced by skills as ${CLAUDE_PLUGIN_ROOT}/templates/*)
-    ├── CLAUDE.template.md    #   CLAUDE.md convention template (Beaver settings block + section guide)
+    ├── CLAUDE.template.md    #   CLAUDE.md convention template (section guide)
     ├── memory-protocol.md    #   user rule memory protocol
     ├── docs/                 #   in-depth convention skeletons (architecture/conventions/data-layer/error-handling/api/testing)
     └── spec · plan · revision · report · review · refactor-plan forms

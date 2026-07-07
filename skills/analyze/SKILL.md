@@ -8,7 +8,7 @@ description: Analyzes the codebase to generate/update convention documents (CLAU
 **Principle: if code exists, the code is the rule; if not, the framework standard is the rule.** On this basis, produce the `CLAUDE.md` + `docs/` conventions and `.beaver/config.json`. Every later stage follows these artifacts.
 
 ## 0. Prerequisites
-- Confirm the project root. If `CLAUDE.md` exists, confirm before overwriting (merge unique rules, update only the "Beaver Settings" block).
+- Confirm the project root. If `CLAUDE.md` exists, confirm before overwriting (merge unique rules; if a legacy "## Beaver Settings" block from an older version is present, remove it — the plugin itself now provides that behavior).
 - **Memory merge**: if `.beaver/memory/` (MEMORY.md + topics) exists, read it and reflect user rules with **top priority**. For `CLAUDE.md reflection: unapplied` entries, propose a formal reflection into the relevant section/docs, then update to `applied` (purely non-code preferences are persisted in memory as `unnecessary`). On conflict, the user's decision in memory takes precedence over measured code facts. Protocol: `${CLAUDE_PLUGIN_ROOT}/templates/memory-protocol.md`.
 
 ## 1. Stack & Environment Detection
@@ -60,7 +60,6 @@ Run measured analysis with fan-out (parallel-first: Workflow parallel / Task dis
 Write it in the structure of `${CLAUDE_PLUGIN_ROOT}/templates/CLAUDE.template.md`. For deep rules, use the skeletons in `${CLAUDE_PLUGIN_ROOT}/templates/docs/*.md` (architecture/conventions/data-layer/error-handling/api/testing) as the frame and fill them into `docs/<topic>.md`.
 - Satisfy the "what to include / depth" noted in each section/skeleton's comments. Put 1–2 line rules in the main body; separate deep rules that need examples/tables/procedures into docs/, leaving only a `→ details:` link in the body.
 - Delete unused sections/docs entirely (do not leave empty headers). For stacks heavy on data/entities, you may further split `data-layer.md` into `entity.md`/`repository.md`.
-- Copy the "## Beaver Settings" block verbatim from the template.
 - **testing.md must state the mock-boundary blind spot**: if the project's unit tests mock the data-access layer, that layer's query-mapping integration is executed by no spec — record this explicitly and fill the template's "Data-Access Smoke" section (no-connection query/metadata build convention when the stack supports it, e.g. TypeORM `buildMetadatas()`+`getSql()`; real-DB fallback otherwise; delete the section only if the project has no data-access layer).
 - Items adopted as standards may be updated as actual code accumulates (use `<!-- TODO -->` if needed).
 

@@ -6,34 +6,9 @@
        · 안 쓰는 섹션은 통째로 삭제(빈 헤더만 남기지 말 것).
        · 각 섹션 주석의 "담을 것 / 깊이"를 기준으로 채운다. 규칙 1~2줄로 끝나면 CLAUDE.md 본문에,
          예시 코드·표·단계 절차가 필요한 깊은 규칙은 docs/<topic>.md 로 분리하고 본문엔 `→ 상세:` 링크만.
-       · "## Beaver 설정" 블록은 문구 그대로 유지(Beaver 동작에 필수).
      완성도 기준: 각 항목이 "이 규칙만 보고 새 도메인 1개를 규약대로 만들 수 있는가?" 를 통과해야 한다. -->
 
 # CLAUDE.md
-
-## Beaver 설정
-
-이 프로젝트는 [Beaver](https://github.com/HaSungJe/beaver)로 관리된다. 각 단계는 슬래시/자연어로 발동(동일 동작):
-
-| 단계 | 슬래시 | 자연어 |
-|---|---|---|
-| 분석(1회) | `/beaver:analyze` | "코드베이스 분석" |
-| 기획 | `/beaver:plan <기능명>` | "<기능명> 기획", "기능 생성/수정" |
-| 구현 | `/beaver:build` | "작업 시작", "구현" |
-| 배포 | `/beaver:ship` | "커밋하고 배포", "작업 마무리" |
-| 리팩토링 | `/beaver:refactor` | "비슷한 기능 묶기", "중복 정리" |
-
-**흐름**:
-- **plan** — 작업하던 브랜치(main/develop 등)에서 `.claude/worktrees/`에 `stick`을 격리 생성하고 세션을 그리로 옮긴다(이미 stick 안이면 누적, 새로 안 만듦).
-- **build** — plan의 테스트 케이스를 실제 테스트 파일로 작성 + 구현(테스트 실행 안 함), 커밋 안 함(stick에 누적).
-- **ship** — 코드리뷰 → 커밋 → origin을 stick에 편입(worktree 안) → 원래 브랜치로 복귀·fast-forward·push → worktree 파기(병합 충돌은 ship이 인라인 해결; ship은 테스트 안 돌림).
-- **test** — `/beaver:test`가 원격 있는 실제 체크아웃(ship 후 원래 브랜치)에서 전체 회귀(`commands.test`) 실행; 독립, stick worktree 안에선 금지.
-- **stick·worktree는 로컬 전용** — push는 ship에서 원래 브랜치로만.
-
-**위치**: 설정 `.beaver/config.json` · 산출물 `.beaver/output/{spec,plan,revision,report,review,refactor}/` (spec/plan/revision/report는 `<domain>/` 하위, review는 stick 단위 flat, refactor는 주제 단위 flat) · 메모리 `.beaver/memory/`(인덱스 MEMORY.md, 코드로 알 수 있는 내용은 저장 안 함) · 상태 dotfile `.beaver/.auto-branch-state.json`(stick→원래 브랜치 매핑) · stick 워크트리 `.claude/worktrees/`.
-**우선순위**: `.beaver/memory/` 의 사용자 규칙이 이 문서(CLAUDE.md)보다 **우선**한다. 작업 중 사용자 지적은 확인 후 memory에 누적되고, 필요 시 이 문서에도 반영된다(충돌 시 memory가 이김).
-
----
 
 <!-- 아래는 analyze 가 채우는 규약. 스택에 없는 섹션은 삭제, 깊은 건 docs/ 로 분리. -->
 
