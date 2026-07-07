@@ -13,6 +13,7 @@ plan→build로 stick worktree에 쌓은 누적분을 원래 작업 브랜치(pl
 ## 1. 코드 리뷰 (커밋 전)
 build는 커밋 없이 누적하므로 ship 진입 시 stick 작업이 전부 미커밋 상태다 — 먼저 **stick base 대비 워킹트리 diff**를 리뷰해, §2 커밋이 리뷰 통과 상태를 담게 한다(fix-up 커밋 없음). **`.beaver/memory/` 규칙 + `CLAUDE.md` 규약·plan/spec 의도 대비 자가 리뷰**하고 결과를 문서로 남긴다:
 - 규약 위반 점검 — memory 규칙(최우선) → 네이밍·구조·공통 로직 분리·에러처리·응답·테스트 강도.
+- **data-access 스모크 커버리지 점검** — diff 가 매핑 민감 쿼리 구문(정의는 docs/testing.md "Data-Access 스모크")을 쓰는 data-access 메서드를 추가/수정했으면, 스모크 spec 이 동반됐는지와 새 매핑 민감 필드 도입 시 위험 매핑 스냅샷이 갱신됐는지 확인한다. 그런 메서드의 mock-only 커버는 지적 사항이다.
 - **memory 반영(reconcile)** — `.beaver/memory/`에서 `CLAUDE.md 반영: 미반영` 엔트리를 훑어 CLAUDE.md/docs 정식 반영을 제안. 승인 시 해당 섹션 수정 + 엔트리를 `반영됨`으로 갱신(코드외 순수 선호는 `불필요`로 두고 memory 영속). 프로토콜 `${CLAUDE_PLUGIN_ROOT}/templates/memory-protocol.md`.
 - **의도 동작 확인** — plan/spec 의도대로 구현됐는지(누락·오구현 없는지). 테스트 통과만으로 끝내지 않는다.
 - **draft 규약 확정** — plan §4.5가 만든 draft 규약 문서(`<!-- beaver:draft ... -->` 마커)가 있으면 **실제 코드와 일치하는지 검증** 후 마커 제거·확정한다. 불일치면 문서를 코드에 맞춰 고친 뒤 확정. 병합으로 비로소 정식 규약이 된다.

@@ -67,8 +67,10 @@
 [FAIL:duplicate]     {데이터} 중복   ← affected_data 기반, 없으면 생략
 [FAIL:service]       service throw 분기마다
 [FAIL:repository]    데이터 계층 실패 분기마다
+[SMOKE:data-access]  신규/변경 data-access 조건마다 DB 없이 쿼리 빌드 무예외   ← 매핑 민감 쿼리 구문 사용 시 필수(정의: docs/testing.md "Data-Access 스모크"), 아니면 생략
 ```
 <!-- 위 성공/실패 분기를 이 프로젝트가 실제로 쓰는 테스트 형태(테스트 러너, 렌더링/상호작용, E2E, 데이터 목킹)에 맞춰 작성한다 — 코드 근거(경로:라인)로 도출하고 프로젝트가 쓰는 이름 그대로 쓴다. 프로젝트에 수단이 없는 분기는 생략한다. -->
+<!-- [SMOKE:data-access] 가 존재하는 이유 — mock 경계 = 검증 경계: data-access mock spec 은 쿼리 매핑 코드를 0줄 실행하므로 필드↔저장소 매핑·쿼리 조립 버그가 구조적으로 통과한다. 해당 메서드에 스모크 케이스가 없으면 plan 미완. -->
 
 
 ---

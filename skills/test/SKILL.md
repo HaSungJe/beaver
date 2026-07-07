@@ -13,7 +13,7 @@ Runs the project's **entire** test suite (`commands.test`). On green it reports 
 - The checkout is assumed to have its dependencies installed. If `commands.test` fails at module resolution, install dependencies (`commands.setup`/`npm ci`/etc.) and retry — do not improvise inside this skill.
 
 ## 1. Self-heal loop
-Run the **entire** `commands.test` suite on the current checkout. Use the configured command verbatim (it need not be unit tests — may be typecheck/build/another runner).
+Run the **entire** `commands.test` suite on the current checkout. Use the configured command verbatim (it need not be unit tests — may be typecheck/build/another runner). If `commands.test_smoke` is defined and not already covered by `commands.test`, run it as part of the same regression (a red smoke enters the same loop below). A failing risky-mapping snapshot means a new mapping-sensitive field appeared (docs/testing.md "Data-Access Smoke") — do not blindly update the snapshot; verify the new field's criteria usage has a smoke case first (snapshot update counts as a test edit → ASSESS gate).
 
 ```
 attempt = 0 ; last_failure = null

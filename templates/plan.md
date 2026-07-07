@@ -67,8 +67,10 @@
 [FAIL:duplicate]     {data} duplicate   ← based on affected_data, omit if none
 [FAIL:service]       Per service throw branch
 [FAIL:repository]    Per data-layer failure branch
+[SMOKE:data-access]  Each new/changed data-access criteria builds to a query without throwing, no DB   ← REQUIRED if any method uses a mapping-sensitive query construct (definition: docs/testing.md "Data-Access Smoke"); omit otherwise
 ```
 <!-- Write the success/failure branches above to match the test forms this project actually uses (test runner, rendering/interaction, E2E, data mocking) — derive them from code evidence (path:line) and name them exactly as the project does. Omit any branch the project has no mechanism for. -->
+<!-- [SMOKE:data-access] exists because mock boundary = verification boundary: data-access-mock specs execute zero query-mapping code, so field↔storage-mapping and query-composition bugs pass structurally. The plan is incomplete if such a method has no smoke case. -->
 
 
 ---
