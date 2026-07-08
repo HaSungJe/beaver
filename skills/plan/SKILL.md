@@ -25,7 +25,7 @@ Enter the worktree **before any write**. Only the git reads in §0–§1 precede
   1. `origin_branch = git branch --show-current` — the target ship will revert to. If empty (detached), stop and direct the user to check out a branch.
   2. stick name = `<stick_prefix>/<domain>-<rand6>` (default `stick/...`). Extract the domain from the feature name/request.
   3. Call `EnterWorktree(name=<stick>)` → CC creates `.claude/worktrees/<stick>` + switches the session cwd (base = current HEAD, with baseRef=head from §0).
-  4. Record `{ "<stick>": "<origin_branch>" }` in `.beaver/.auto-branch-state.json`.
+  4. Record `{ "<stick>": "<origin_branch>" }` in `.beaver/.auto-branch-state.json`. If the project's `.gitignore` lacks the line `.beaver/.auto-branch-state.json`, add it (internal plugin state — must not be committed; analyze normally seeds this, this is the safety net for projects analyzed before it existed).
 
   The worktree is **not** populated with dependency dirs: nothing runs code in the worktree (build writes tests but does not execute them; the full regression runs at ship on the original-branch checkout, which already has dependencies).
 

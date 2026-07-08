@@ -44,6 +44,7 @@ Each stage has two entry points — a **slash command** and **natural language**
 |---|---|---|---|---|
 | Analyze (independent · once) | **Analyze** | `/beaver:analyze` | "analyze the codebase" | Generates/updates `CLAUDE.md` + `docs/` conventions + `.beaver/config.json` from measured code (or framework standards if absent), merging & applying any existing CLAUDE.md/memory |
 | Plan & implement | **Plan** | `/beaver:plan <feature>` | "plan <feature>" | Auto-detects new vs. change → creates & enters an isolated stick worktree → parallel deep analysis of the codebase (new vs. addition detection; technical review if new) → interactive one-question-at-a-time decisions → auto-generates spec + writes plan (revision if a change) (validation hook on save). If a new convention area, a draft document |
+| Plan & implement | **Fast** | `/beaver:fast <feature>` | "fast plan <feature>" | Same as Plan but **without a stick worktree** — plans directly on the current branch. build then works in place, and ship commits + pushes the current branch directly (no merge, no worktree destroy) |
 | Plan & implement | **Build** | `/beaver:build` | "start work" | Parallel preparation fan-out → writes the plan's test cases as real test files + implements per conventions (**no test execution**) → report. No test run, no commit, no full regression |
 | Ship | **Ship** | `/beaver:ship` | "commit and ship" | Code review of the stick's accumulation (memory · conventions · intent · draft confirmation, review document) → approval-based commit → integrate origin into the stick (in the worktree) → return to the original branch · fast-forward · push → destroy the worktree. Inline resolution on conflict |
 | Verify (independent) | **Test** | `/beaver:test` | "run the full tests" | Runs the **full regression** (`commands.test`) once on the current checkout. Standalone — run it on a branch with a remote (the original branch after ship), never inside a stick worktree. Reports pass/fail; no source edits |
@@ -61,8 +62,12 @@ analyze        # independent · once per project (generates convention docs)
 plan → build   # one set · repeated per feature in a stick worktree (accumulates without committing)
                #   plan: creates .claude/worktrees/<stick> isolated from the current branch HEAD + enters the session
 
+fast → build   # worktree-less variant of plan → build: everything on the current branch
+               #   ship then runs in direct mode — plain commit + push (no merge, no destroy)
+
 ship           # one set · code review → commit → integrate origin into the stick (in the worktree)
                #   → ExitWorktree return → fast-forward the original branch → push → destroy worktree
+               #   direct mode (fast flow): review → commit → push the current branch
  └ inline conflict   #   on merge conflict, ship handles it directly in the worktree — integrate per conventions
 
 test           # independent · run /beaver:test on the original branch (with remote) after ship → full regression
@@ -70,7 +75,7 @@ test           # independent · run /beaver:test on the original branch (with re
 refactor       # independent · when needed (plan → execute, behavior preserved)
 ```
 
-> **Branch model**: from the current HEAD of the branch you were working on (e.g. `main`/`develop`), a working branch `stick/<domain>-<rand6>` is branched off and isolated into `.claude/worktrees/<stick>` (CC `EnterWorktree`, `worktree.baseRef=head`). ship forward-merges & pushes the stick into the original branch, then destroys the worktree and the stick. **Sticks & worktrees are local-only — ship pushes only to the original branch.** The stick prefix can be changed via `branch.stick_prefix` (default `stick`) in `.beaver/config.json`. The stick→original branch mapping is recorded in `.beaver/.auto-branch-state.json`. Since each session uses a different worktree, **parallel work** is possible.
+> **Branch model**: from the current HEAD of the branch you were working on (e.g. `main`/`develop`), a working branch `stick/<domain>-<rand6>` is branched off and isolated into `.claude/worktrees/<stick>` (CC `EnterWorktree`, `worktree.baseRef=head`). ship forward-merges & pushes the stick into the original branch, then destroys the worktree and the stick. **Sticks & worktrees are local-only — ship pushes only to the original branch.** The stick prefix can be changed via `branch.stick_prefix` (default `stick`) in `.beaver/config.json`. The stick→original branch mapping is recorded in `.beaver/.auto-branch-state.json`. Since each session uses a different worktree, **parallel work** is possible. `/beaver:fast` skips this model entirely — no stick, no worktree; build and ship operate directly on the current branch (at the cost of isolation and parallel sessions).
 
 ---
 
@@ -86,7 +91,7 @@ This is what each skill actually does. **All git/file operations, tests, and app
 - **Merge existing CLAUDE.md** — if present, confirm before overwriting; preserve unique rules and remove any legacy "Beaver settings" block (the plugin itself now provides that behavior).
 - **Stack detection** — identifies the framework and test/build commands from the manifest (`package.json`/`pom.xml`/`build.gradle`/`pyproject.toml`/`go.mod`/`Cargo.toml`), with user confirmation. Decision points not settled by code are asked, with a recommendation, only when there are two or more alternatives — derived from what this project actually leaves open (with code evidence where it exists); the questions follow the detected framework's idiomatic baseline rather than a fixed catalog.
 - **Analysis** — for existing code, it reads representative files and extracts rules with evidence (path:line) (using `agents/`' architecture-mapper · convention-scout · test-pattern-analyzer in Workflow-parallel / Task-distributed / sequential fashion). For new, empty projects it adopts the framework's standard structure. **Fabrication prevention**: assets with zero usages are read by signature only, and infrastructure that is implemented but unapplied is honestly labeled as "unapplied/convention".
-- **Artifacts** — root `CLAUDE.md` (`templates/CLAUDE.template.md` structure) + `docs/<topic>.md` (only the ones used among architecture · conventions · data-layer · error-handling · api · testing) + `.beaver/config.json` (stack · commands · paths · branch). Every rule is labeled with its source (measured path / "standard: 〈framework〉 recommendation" / "choice: user").
+- **Artifacts** — root `CLAUDE.md` (`templates/CLAUDE.template.md` structure) + `docs/<topic>.md` (only the ones used among architecture · conventions · data-layer · error-handling · api · testing) + `.beaver/config.json` (stack · commands · paths · branch). Every rule is labeled with its source (measured path / "standard: 〈framework〉 recommendation" / "choice: user"). Also seeds `.gitignore` with `.beaver/.auto-branch-state.json` so the plugin's internal state never lands in git (idempotent; config/output/memory stay tracked).
 - analyze itself **does not create branches or run tests** — it only records values into config (stick worktree creation and test execution belong to plan/build/ship).
 
 ### 📝 `/beaver:plan <feature>` — Planning (spec → plan / revision)
@@ -100,6 +105,13 @@ This is what each skill actually does. **All git/file operations, tests, and app
 - **Validation hook on save** — when a document is saved, `on-doc-written.js` automatically checks required sections (blocks on missing ones; warns on unanswered decisions and incomplete prerequisite items).
 - **Draft convention** — if the plan introduces a **new convention area** (websocket · payment, etc.) not in `docs/`/`CLAUDE.md`, it proposes reflecting it into docs and, on approval, creates a document marked with `<!-- beaver:draft -->` (build aligns the code to it, ship confirms it).
 - plan **does not run tests** — it only designs the test cases as a document.
+
+### ⚡ `/beaver:fast <feature>` — Planning without a worktree (current branch, direct)
+
+- **Same planning flow as plan** — mode detection, deep analysis, one-question-at-a-time decisions, spec/plan/revision documents, draft conventions: all identical (fast executes plan's skill with overrides).
+- **No worktree** — `EnterWorktree` is never called; no stick branch, no `.auto-branch-state.json` entry, no `worktree.baseRef` seed. Requires a checked-out branch (detached HEAD stops). All documents land directly on the current branch.
+- **Downstream direct mode** — build detects the plan in the main checkout's `.beaver/output/` and implements in place; ship reviews → commits → pushes the current branch (no merge, no destroy).
+- **Trade-off** — no isolation: parallel sessions on the same checkout conflict. Use `/beaver:plan` when isolation or parallel work matters.
 
 ### 🔨 `/beaver:build` — Write tests + implement (no test run) · *no commit*
 
@@ -116,7 +128,7 @@ This is what each skill actually does. **All git/file operations, tests, and app
 
 ### 🚀 `/beaver:ship` — Commit + merge & push to the original branch + destroy worktree
 
-- **Prerequisite** — inside a stick worktree (the current stick key exists in `.beaver/.auto-branch-state.json`) + a completed report or changes.
+- **Prerequisite** — a completed report or changes. **Mode detection**: inside a stick worktree (the current stick key exists in `.beaver/.auto-branch-state.json`) → worktree mode (full flow below); at the main checkout (fast flow) → **direct mode**: review → commit → integrate origin if remote tracking exists → `git push` the current branch. No merge into another branch, no worktree destroy.
 - **① Code review (before commit)** — build accumulates without committing, so the stick's work is uncommitted at ship entry; review the **working-tree diff against the stick's base** first (so the commit captures the reviewed result), in the order **memory rules → CLAUDE.md conventions → plan/spec intent**:
   - Convention-violation checks (naming · structure · common-logic separation · errors · responses · test strength)
   - **memory reconcile** — propose formally reflecting unapplied memory rules into CLAUDE.md/docs
@@ -208,8 +220,8 @@ beaver/
 │   └── auto-approve.js      #   hook: auto-approve in-project file edits (auto_approve, default on; Bash never)
 ├── agents/                  # fan-out by analyze when measuring (tools: Glob/Grep/Read)
 │   ├── architecture-mapper.md  ·  convention-scout.md  ·  test-pattern-analyzer.md
-├── skills/                  # 6 skills (slash + auto-trigger)
-│   ├── analyze/  plan/  build/  ship/  test/  refactor/
+├── skills/                  # 7 skills (slash + auto-trigger)
+│   ├── analyze/  plan/  fast/  build/  ship/  test/  refactor/
 └── templates/               # convention · artifact forms (referenced by skills as ${CLAUDE_PLUGIN_ROOT}/templates/*)
     ├── CLAUDE.template.md    #   CLAUDE.md convention template (section guide)
     ├── memory-protocol.md    #   user rule memory protocol
@@ -217,7 +229,7 @@ beaver/
     └── spec · plan · revision · report · review · refactor-plan forms
 ```
 
-> **Runtime artifacts** are created in the user's project (not in the plugin repo): root `CLAUDE.md`/`docs/`, and under `.beaver/`: `config.json` · `output/{spec,plan,revision,report,review,refactor}/` · `memory/` (user rules) · state dotfile (`.auto-branch-state.json`) · stick worktrees (`.claude/worktrees/`).
+> **Runtime artifacts** are created in the user's project (not in the plugin repo): root `CLAUDE.md`/`docs/`, and under `.beaver/`: `config.json` · `output/{spec,plan,revision,report,review,refactor}/` · `memory/` (user rules) · state dotfile (`.auto-branch-state.json` — internal plugin state; analyze seeds it into `.gitignore`, so it never gets committed) · stick worktrees (`.claude/worktrees/`).
 
 ## License
 

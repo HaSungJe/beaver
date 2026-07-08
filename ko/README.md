@@ -44,6 +44,7 @@ Claude Code에서:
 |---|---|---|---|---|
 | 분석 (독립·1회) | **분석** | `/beaver:analyze` | "코드베이스 분석해줘" | 코드 실측(없으면 프레임워크 표준)으로 `CLAUDE.md` + `docs/` 규약 + `.beaver/config.json` 생성·갱신, 기존 CLAUDE.md·memory 병합·반영 |
 | 기획·구현 | **기획** | `/beaver:plan <기능명>` | "<기능명> 기획해줘" | 신규/변경 자동 판별 → stick 워크트리 격리 생성·진입 → 코드베이스 병렬 심층분석(신규/추가 판별, 신규면 기술검토) → 대화형 1문1답으로 결정 → spec 자동생성 + plan(변경이면 revision) 작성(저장 시 검증 훅). 새 규약 영역이면 draft 문서 |
+| 기획·구현 | **빠른 기획** | `/beaver:fast <기능명>` | "<기능명> 빠른 기획" | plan과 동일하되 **stick 워크트리 없이** — 현재 브랜치에서 바로 기획. build도 그 자리에서 작업하고, ship은 현재 브랜치를 바로 커밋 + 푸쉬(병합·worktree 파기 없음) |
 | 기획·구현 | **개발** | `/beaver:build` | "작업 시작" | 준비 병렬 fan-out → plan의 테스트 케이스를 실제 테스트 파일로 작성 + 규약대로 구현(**테스트 실행 안 함**) → report. 테스트 실행·커밋·전체 회귀 안 함 |
 | 배포 | **배포** | `/beaver:ship` | "커밋하고 배포" | stick 누적분 코드 리뷰(memory·규약·의도·draft 확정, review 문서) → 승인 커밋 → origin을 stick에 편입(worktree 안) → 원래 브랜치 복귀·fast-forward·push → worktree 파기. 충돌 시 인라인 해결 |
 | 검증 (독립) | **테스트** | `/beaver:test` | "전체 테스트 돌려" | **전체 회귀**(`commands.test`)를 현재 체크아웃에서 1회 실행. 독립 — 원격 있는 브랜치(ship 후 원래 브랜치)에서 돌리고, stick worktree 안에선 금지. 통과/실패 보고, 소스 수정 안 함 |
@@ -61,8 +62,12 @@ analyze        # 독립 · 프로젝트당 1회 (규약 문서 생성)
 plan → build   # 한 세트 · stick 워크트리에서 기능마다 반복 (커밋 안 하고 누적)
                #   plan: 현재 브랜치 HEAD에서 .claude/worktrees/<stick> 격리 생성 + 세션 진입
 
+fast → build   # plan → build의 워크트리 없는 변형: 전부 현재 브랜치에서
+               #   이후 ship은 직접 모드 — 일반 커밋 + 푸쉬 (병합·파기 없음)
+
 ship           # 한 세트 · 코드리뷰 → 커밋 → origin을 stick에 편입(worktree 안)
                #   → ExitWorktree 복귀 → 원래 브랜치 fast-forward → push → worktree 파기
+               #   직접 모드(fast 흐름): 리뷰 → 커밋 → 현재 브랜치 푸쉬
  └ 충돌 인라인   #   병합 충돌 시 ship이 worktree 안에서 직접 — 규약대로 통합
 
 test           # 독립 · ship 후 원래 브랜치(원격 있음)에서 /beaver:test → 전체 회귀
@@ -70,7 +75,7 @@ test           # 독립 · ship 후 원래 브랜치(원격 있음)에서 /beave
 refactor       # 독립 · 필요 시 (계획서 → 실행, 동작 보존)
 ```
 
-> **브랜치 모델**: 작업하던 브랜치(예 `main`/`develop`)의 현재 HEAD에서 작업 브랜치 `stick/<domain>-<rand6>`를 뻗어 `.claude/worktrees/<stick>`에 격리한다(CC `EnterWorktree`, `worktree.baseRef=head`). ship이 stick을 원래 브랜치로 전진병합·푸쉬한 뒤 worktree와 stick을 파기한다. **stick·worktree는 로컬 전용 — push는 ship이 원래 브랜치로만 한다.** stick 접두사는 `.beaver/config.json` 의 `branch.stick_prefix`(기본 `stick`)로 변경 가능. stick→원래 브랜치 매핑은 `.beaver/.auto-branch-state.json`에 기록된다. 세션마다 다른 워크트리라 **병렬 작업**이 가능하다.
+> **브랜치 모델**: 작업하던 브랜치(예 `main`/`develop`)의 현재 HEAD에서 작업 브랜치 `stick/<domain>-<rand6>`를 뻗어 `.claude/worktrees/<stick>`에 격리한다(CC `EnterWorktree`, `worktree.baseRef=head`). ship이 stick을 원래 브랜치로 전진병합·푸쉬한 뒤 worktree와 stick을 파기한다. **stick·worktree는 로컬 전용 — push는 ship이 원래 브랜치로만 한다.** stick 접두사는 `.beaver/config.json` 의 `branch.stick_prefix`(기본 `stick`)로 변경 가능. stick→원래 브랜치 매핑은 `.beaver/.auto-branch-state.json`에 기록된다. 세션마다 다른 워크트리라 **병렬 작업**이 가능하다. `/beaver:fast`는 이 모델을 통째로 건너뛴다 — stick도 worktree도 없이 build·ship이 현재 브랜치에서 바로 동작한다(격리·병렬 세션은 포기).
 
 ---
 
@@ -86,7 +91,7 @@ refactor       # 독립 · 필요 시 (계획서 → 실행, 동작 보존)
 - **기존 CLAUDE.md 병합** — 있으면 덮어쓰기 전 확인, 고유 규칙은 보존하고 구버전이 만든 "Beaver 설정" 블록은 제거(해당 동작은 이제 플러그인 자체가 제공).
 - **스택 감지** — 매니페스트(`package.json`/`pom.xml`/`build.gradle`/`pyproject.toml`/`go.mod`/`Cargo.toml`)로 프레임워크·test/build 커맨드 식별(사용자 확인). 코드로 안 정해지는 결정 포인트는 대안이 2개 이상일 때만 권장안과 함께 질문 — 이 프로젝트가 실제로 열어둔 지점을 근거(있으면 경로:라인)로 도출하며, 질문은 고정 카탈로그가 아니라 감지된 프레임워크의 관용 베이스라인을 따른다.
 - **분석** — 기존 코드면 대표 파일을 읽어 근거(경로:라인)로 규칙 추출(`agents/`의 architecture-mapper·convention-scout·test-pattern-analyzer를 Workflow 병렬/Task 분산/순차로 활용). 신규·빈 프로젝트면 프레임워크 표준 구조 채택. **날조 방지**: 용례 0건 자산은 시그니처만 직독, 구현됐으나 미적용 인프라는 "미적용/규약"으로 정직 표기.
-- **산출물** — 루트 `CLAUDE.md`(`templates/CLAUDE.template.md` 구조) + `docs/<topic>.md`(architecture·conventions·data-layer·error-handling·api·testing 중 쓰는 것만) + `.beaver/config.json`(stack·commands·paths·branch). 모든 규칙에 출처(실측 경로 / "표준: 〈프레임워크〉 권장" / "선택: 사용자") 표기.
+- **산출물** — 루트 `CLAUDE.md`(`templates/CLAUDE.template.md` 구조) + `docs/<topic>.md`(architecture·conventions·data-layer·error-handling·api·testing 중 쓰는 것만) + `.beaver/config.json`(stack·commands·paths·branch). 모든 규칙에 출처(실측 경로 / "표준: 〈프레임워크〉 권장" / "선택: 사용자") 표기. `.gitignore`에 `.beaver/.auto-branch-state.json`도 시드해 플러그인 내부 상태가 깃에 남지 않게 한다(멱등; config·output·memory는 추적 유지).
 - analyze 자체는 **브랜치를 만들거나 테스트를 실행하지 않는다** — 값을 config에 기록만 한다(stick 워크트리 생성·테스트 실행은 plan/build/ship).
 
 ### 📝 `/beaver:plan <기능명>` — 기획 (spec → plan / revision)
@@ -100,6 +105,13 @@ refactor       # 독립 · 필요 시 (계획서 → 실행, 동작 보존)
 - **저장 시 검증 훅** — 문서를 저장하면 `on-doc-written.js`가 자동으로 필수 섹션을 검사(누락 시 차단, 미답 결정사항·미완 사전항목은 경고).
 - **draft 규약** — 기획이 `docs/`·`CLAUDE.md`에 없는 **새 규약 영역**(websocket·payment 등)을 도입하면 docs 반영을 제안하고, 승인 시 `<!-- beaver:draft -->` 마커를 단 문서를 만든다(코드는 build가 맞추고, ship이 확정).
 - plan은 **테스트를 실행하지 않는다** — 테스트 케이스를 문서로 설계만 한다.
+
+### ⚡ `/beaver:fast <기능명>` — 워크트리 없는 기획 (현재 브랜치에서 바로)
+
+- **기획 흐름은 plan과 동일** — 모드 판별, 심층분석, 1문1답 결정, spec/plan/revision 문서, draft 규약 전부 같다(fast는 plan 스킬을 오버라이드와 함께 수행).
+- **워크트리 없음** — `EnterWorktree` 호출 안 함; stick 브랜치도, `.auto-branch-state.json` 기록도, `worktree.baseRef` 시드도 없다. 체크아웃된 브랜치 필요(detached HEAD면 중단). 모든 문서가 현재 브랜치에 바로 쌓인다.
+- **이후 단계 직접 모드** — build는 메인 체크아웃의 `.beaver/output/`에서 plan을 찾아 그 자리에서 구현; ship은 리뷰 → 커밋 → 현재 브랜치 푸쉬(병합·파기 없음).
+- **Trade-off** — 격리 없음: 같은 체크아웃의 병렬 세션은 충돌한다. 격리·병렬이 중요하면 `/beaver:plan`.
 
 ### 🔨 `/beaver:build` — 테스트 작성 + 구현 (실행 안 함) · *커밋 안 함*
 
@@ -116,7 +128,7 @@ refactor       # 독립 · 필요 시 (계획서 → 실행, 동작 보존)
 
 ### 🚀 `/beaver:ship` — 커밋 + 원래 브랜치 병합·푸쉬 + worktree 파기
 
-- **전제** — stick 워크트리 안(`.beaver/.auto-branch-state.json`에 현재 stick 키 존재) + 완료 report 또는 변경분.
+- **전제** — 완료 report 또는 변경분. **모드 판별**: stick 워크트리 안(`.beaver/.auto-branch-state.json`에 현재 stick 키 존재)이면 워크트리 모드(아래 전체 흐름); 메인 체크아웃(fast 흐름)이면 **직접 모드** — 리뷰 → 커밋 → 원격 추적 있으면 origin 편입 → 현재 브랜치 `git push`. 다른 브랜치 병합도, worktree 파기도 없다.
 - **① 코드 리뷰(커밋 전)** — build는 커밋 없이 누적하므로 ship 진입 시 stick 작업이 미커밋 상태다. **stick base 대비 워킹트리 diff**를 먼저(커밋이 리뷰 통과 상태를 담도록) **memory 규칙 → CLAUDE.md 규약 → plan/spec 의도** 순으로 자가 리뷰:
   - 규약 위반 점검(네이밍·구조·공통 로직 분리·에러·응답·테스트 강도)
   - **memory reconcile** — 미반영 memory 규칙을 CLAUDE.md/docs에 정식 반영 제안
@@ -208,8 +220,8 @@ beaver/
 │   └── auto-approve.js      #   훅: 프로젝트 내 파일 편집 자동승인(auto_approve, 기본 on; Bash 제외)
 ├── agents/                  # analyze가 실측 시 fan-out (tools: Glob/Grep/Read)
 │   ├── architecture-mapper.md  ·  convention-scout.md  ·  test-pattern-analyzer.md
-├── skills/                  # 6개 skill (슬래시 + 자동발동)
-│   ├── analyze/  plan/  build/  ship/  test/  refactor/
+├── skills/                  # 7개 skill (슬래시 + 자동발동)
+│   ├── analyze/  plan/  fast/  build/  ship/  test/  refactor/
 └── templates/               # 규약·산출물 양식 (skill이 ${CLAUDE_PLUGIN_ROOT}/templates/* 로 참조)
     ├── CLAUDE.template.md    #   CLAUDE.md 규약 템플릿 (섹션 가이드)
     ├── memory-protocol.md    #   사용자 규칙 memory 프로토콜
@@ -217,7 +229,7 @@ beaver/
     └── spec · plan · revision · report · review · refactor-plan 양식
 ```
 
-> **런타임 산출물**은 사용자 프로젝트에 생성된다(플러그인 저장소엔 없음): 루트 `CLAUDE.md`·`docs/`, 그리고 `.beaver/` 아래 `config.json` · `output/{spec,plan,revision,report,review,refactor}/` · `memory/`(사용자 규칙) · 상태 dotfile(`.auto-branch-state.json`) · stick 워크트리(`.claude/worktrees/`).
+> **런타임 산출물**은 사용자 프로젝트에 생성된다(플러그인 저장소엔 없음): 루트 `CLAUDE.md`·`docs/`, 그리고 `.beaver/` 아래 `config.json` · `output/{spec,plan,revision,report,review,refactor}/` · `memory/`(사용자 규칙) · 상태 dotfile(`.auto-branch-state.json` — 플러그인 내부 상태; analyze가 `.gitignore`에 시드해 커밋되지 않는다) · stick 워크트리(`.claude/worktrees/`).
 
 ## License
 

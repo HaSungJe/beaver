@@ -5,13 +5,15 @@ description: Implements a planned plan/revision (writes test files, then impleme
 
 # build — Write Tests → Implement → Report
 
-build **does not commit** — it only writes tests and implements, accumulating on the stick branch. Deployment is done via `/beaver:ship`.
+build **does not commit** — it only writes tests and implements, accumulating on the stick branch (or on the current branch in fast direct mode). Deployment is done via `/beaver:ship`.
 
 ## 0. Ensure Stick Worktree → Memory First + Mode/Target
 
-**Ensure in the stick worktree (before any read or write)**: build accumulates on the stick branch, so it must run **inside** the stick worktree — never the main repo. Do this before scanning `.beaver/output/` or writing the report (otherwise a fresh session leaks the report into main).
-- **If already inside a stick worktree** (cwd is `.claude/worktrees/<stick>` and `.beaver/.auto-branch-state.json` has the key) → proceed.
-- **Otherwise** (fresh session, cwd at main) → do **not** scan main. Find the stick worktree under `.claude/worktrees/` that holds an unimplemented plan/revision for the target feature (match by feature name; the stick name carries the domain). If exactly one matches, `EnterWorktree(name=<stick>)` to resume it; if none or 2+ match, stop and tell the user to run `/beaver:plan` first or name the target explicitly.
+**Resolve where the work lives (before any read or write)**: build accumulates where plan (or fast) put the documents — a stick worktree or the main checkout — never the wrong one. Do this before scanning `.beaver/output/` or writing the report (otherwise a fresh session leaks the report into main).
+- **If already inside a stick worktree** (cwd is `.claude/worktrees/<stick>` and `.beaver/.auto-branch-state.json` has the key) → proceed (worktree mode).
+- **Otherwise (cwd at main)** — check **direct mode (fast)** first: if the main checkout's `.beaver/output/` holds an unimplemented plan/revision for the target feature (created by `/beaver:fast`), work **in place on the current branch** — no worktree; accumulate uncommitted, and ship will commit + push directly. `git branch --show-current` must be non-empty (detached → stop).
+- **Otherwise** → do **not** scan main further. Find the stick worktree under `.claude/worktrees/` that holds an unimplemented plan/revision for the target feature (match by feature name; the stick name carries the domain). If exactly one matches, `EnterWorktree(name=<stick>)` to resume it; if none or 2+ match, stop and tell the user to run `/beaver:plan` (or `/beaver:fast`) first or name the target explicitly.
+- If **both** a main-checkout plan and a matching stick worktree exist for the same feature, stop and ask the user which one to build.
 
 **Read memory first**: read `.beaver/memory/` (MEMORY.md + relevant topics) and apply it with **top priority** throughout implementation (memory > CLAUDE.md > defaults). If the user points out a persistent rule during implementation (a constraint on where some responsibility belongs in this project's own structure), **confirm and save it**, then apply immediately — protocol: `${CLAUDE_PLUGIN_ROOT}/templates/memory-protocol.md`. If it conflicts with or reinforces a CLAUDE.md convention, also propose reflecting it in CLAUDE.md (do not edit immediately; only apply memory-first).
 
