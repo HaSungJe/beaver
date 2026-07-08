@@ -91,7 +91,7 @@ refactor       # 독립 · 필요 시 (계획서 → 실행, 동작 보존)
 - **기존 CLAUDE.md 병합** — 있으면 덮어쓰기 전 확인, 고유 규칙은 보존하고 구버전이 만든 "Beaver 설정" 블록은 제거(해당 동작은 이제 플러그인 자체가 제공).
 - **스택 감지** — 매니페스트(`package.json`/`pom.xml`/`build.gradle`/`pyproject.toml`/`go.mod`/`Cargo.toml`)로 프레임워크·test/build 커맨드 식별(사용자 확인). 코드로 안 정해지는 결정 포인트는 대안이 2개 이상일 때만 권장안과 함께 질문 — 이 프로젝트가 실제로 열어둔 지점을 근거(있으면 경로:라인)로 도출하며, 질문은 고정 카탈로그가 아니라 감지된 프레임워크의 관용 베이스라인을 따른다.
 - **분석** — 기존 코드면 대표 파일을 읽어 근거(경로:라인)로 규칙 추출(`agents/`의 architecture-mapper·convention-scout·test-pattern-analyzer를 Workflow 병렬/Task 분산/순차로 활용). 신규·빈 프로젝트면 프레임워크 표준 구조 채택. **날조 방지**: 용례 0건 자산은 시그니처만 직독, 구현됐으나 미적용 인프라는 "미적용/규약"으로 정직 표기.
-- **산출물** — 루트 `CLAUDE.md`(`templates/CLAUDE.template.md` 구조) + `docs/<topic>.md`(architecture·conventions·data-layer·error-handling·api·testing 중 쓰는 것만) + `.beaver/config.json`(stack·commands·paths·branch). 모든 규칙에 출처(실측 경로 / "표준: 〈프레임워크〉 권장" / "선택: 사용자") 표기. `.gitignore`에 `.beaver/.auto-branch-state.json`도 시드해 플러그인 내부 상태가 깃에 남지 않게 한다(멱등; config·output·memory는 추적 유지).
+- **산출물** — 루트 `CLAUDE.md`(`templates/CLAUDE.template.md` 구조) + `docs/<topic>.md`(architecture·conventions·data-layer·error-handling·api·testing 중 쓰는 것만) + `.beaver/config.json`(stack·commands·paths·branch). 모든 규칙에 출처(실측 경로 / "표준: 〈프레임워크〉 권장" / "선택: 사용자") 표기. `.gitignore`에 `.beaver/.auto-branch-state.json`도 추가한다(멱등).
 - analyze 자체는 **브랜치를 만들거나 테스트를 실행하지 않는다** — 값을 config에 기록만 한다(stick 워크트리 생성·테스트 실행은 plan/build/ship).
 
 ### 📝 `/beaver:plan <기능명>` — 기획 (spec → plan / revision)
@@ -229,7 +229,9 @@ beaver/
     └── spec · plan · revision · report · review · refactor-plan 양식
 ```
 
-> **런타임 산출물**은 사용자 프로젝트에 생성된다(플러그인 저장소엔 없음): 루트 `CLAUDE.md`·`docs/`, 그리고 `.beaver/` 아래 `config.json` · `output/{spec,plan,revision,report,review,refactor}/` · `memory/`(사용자 규칙) · 상태 dotfile(`.auto-branch-state.json` — 플러그인 내부 상태; analyze가 `.gitignore`에 시드해 커밋되지 않는다) · stick 워크트리(`.claude/worktrees/`).
+> **런타임 산출물**은 사용자 프로젝트에 생성된다(플러그인 저장소엔 없음): 루트 `CLAUDE.md`·`docs/`, 그리고 `.beaver/` 아래 `config.json` · `output/{spec,plan,revision,report,review,refactor}/` · `memory/`(사용자 규칙) · 상태 dotfile(`.auto-branch-state.json`) · stick 워크트리(`.claude/worktrees/`).
+>
+> 이 중 `.beaver/.auto-branch-state.json` **하나만** analyze가 `.gitignore`에 추가한다.
 
 ## License
 

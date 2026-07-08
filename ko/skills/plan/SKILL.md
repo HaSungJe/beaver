@@ -25,7 +25,7 @@ description: 기능을 기획해 문서(spec → plan, 변경이면 revision)를
   1. `origin_branch = git branch --show-current` — ship이 되돌릴 대상. 빈값(detached)이면 중단하고 브랜치 체크아웃 안내.
   2. stick 이름 = `<stick_prefix>/<domain>-<rand6>` (기본 `stick/...`). 도메인은 기능명/요청에서 추출.
   3. `EnterWorktree(name=<stick>)` 호출 → CC가 `.claude/worktrees/<stick>` 생성 + 세션 cwd 전환(base=현재 HEAD, §0의 baseRef=head).
-  4. `.beaver/.auto-branch-state.json`에 `{ "<stick>": "<origin_branch>" }` 기록. 프로젝트 `.gitignore`에 `.beaver/.auto-branch-state.json` 라인이 없으면 추가한다(플러그인 내부 상태 — 커밋 금지; 원래 analyze가 시드하지만, 그 이전에 analyze를 돌린 프로젝트를 위한 안전망).
+  4. `.beaver/.auto-branch-state.json`에 `{ "<stick>": "<origin_branch>" }` 기록. 프로젝트 `.gitignore`에 `.beaver/.auto-branch-state.json` 라인이 없으면 추가한다(원래 analyze가 시드; 그 이전에 analyze를 돌린 프로젝트를 위한 안전망).
 
   워크트리에는 의존성 디렉터리를 **채우지 않는다**: 워크트리에서 코드를 실행하는 단계가 없다(build는 테스트를 작성만 하고 실행하지 않으며, 전체 회귀는 ship에서 원래 브랜치 체크아웃—이미 의존성 보유—에서 돈다).
 
