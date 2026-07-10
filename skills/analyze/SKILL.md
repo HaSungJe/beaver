@@ -5,11 +5,11 @@ description: Analyzes the codebase to generate/update convention documents (CLAU
 
 # analyze — Convention Generation (Code-First, Framework Standards as Fallback)
 
-**Principle: if code exists, the code is the rule; if not, the framework standard is the rule.** On this basis, produce the `CLAUDE.md` + `docs/` conventions and `.beaver/config.json`. Every later stage follows these artifacts.
+**Principle: if code exists, the code is the rule; if not, the framework standard is.** Produce the `CLAUDE.md` + `docs/` conventions and `.beaver/config.json`; every later stage follows these artifacts.
 
 ## 0. Prerequisites
-- Confirm the project root. If `CLAUDE.md` exists, confirm before overwriting (merge unique rules; if a legacy "## Beaver Settings" block from an older version is present, remove it — the plugin itself now provides that behavior).
-- **Memory merge**: if `.beaver/memory/` (MEMORY.md + topics) exists, read it and reflect user rules with **top priority**. For `CLAUDE.md reflection: unapplied` entries, propose a formal reflection into the relevant section/docs, then update to `applied` (purely non-code preferences are persisted in memory as `unnecessary`). On conflict, the user's decision in memory takes precedence over measured code facts. Protocol: `${CLAUDE_PLUGIN_ROOT}/templates/memory-protocol.md`.
+- Confirm the project root. If `CLAUDE.md` exists, confirm before overwriting (merge unique rules; remove a legacy "## Beaver Settings" block if present — the plugin itself now provides that behavior).
+- **Memory merge**: if `.beaver/memory/` exists, read it and reflect user rules with **top priority**. For `CLAUDE.md reflection: unapplied` entries, propose a formal reflection into the relevant section/docs, then mark `applied` (pure non-code preferences stay `unnecessary`). On conflict, the user's decision in memory beats measured code facts. Protocol: `${CLAUDE_PLUGIN_ROOT}/templates/memory-protocol.md`.
 
 ## 1. Stack & Environment Detection
 Identify the framework, version, core dependencies, and test/build commands from the manifest (confirm with the user):
@@ -24,46 +24,41 @@ Identify the framework, version, core dependencies, and test/build commands from
 | go.mod | `go test ./...` / `go build ./...` |
 | Cargo.toml | `cargo test` / `cargo build` |
 
-<!-- Detection is language·framework·position-agnostic. Frontend, mobile, CLI, and library projects are detected by the same signals (manifest + framework config + entry-surface dir). Next.js = `next` dependency + `next.config.*` + an `app/` (App Router) or `pages/` (Pages Router) directory. -->
+Detection is language·framework·position-agnostic — frontend, mobile, CLI, and library projects detect by the same signals (manifest + framework config + entry-surface dir).
 
-<!-- Decision points to settle: derive whichever ones this project actually faces from the detected framework's idiomatic baseline, recorded with code evidence (path:line) and named exactly as the project names them. Do not assume a fixed per-position catalog. -->
-
-<!-- Vocabulary used below, position-neutral and abstract. LAYER/UNIT = responsibility-separation unit. ENTRY POINT = reachable surface. DATA/AFFECTED STATE = state read/changed ("persist OR fetch remote data"). OUTCOME/INTERFACE CONTRACT = result/contract an entry point produces. For each, derive what this project actually uses from code evidence (path:line) and use the project's own names. -->
-
+Vocabulary below is position-neutral: LAYER/UNIT = responsibility-separation unit; ENTRY POINT = reachable surface; DATA/AFFECTED STATE = state read/changed (persist OR fetch remote data); OUTCOME/INTERFACE CONTRACT = result an entry point produces. For each, derive what this project actually uses from code evidence (path:line) and use the project's own names — do not assume a fixed per-position catalog.
 
 ## 1.5 Undecided-Area Selection (Interactive)
-For **stack decision points not settled by code**, dynamically derive the options based on the framework the model detected (e.g., whether to use an ORM → `typeorm`/`prisma`/none, auth strategy, caching, etc.). Apply this to the entirety of new/empty projects plus the undecided areas of existing projects.
-<!-- Surface only the decision points this project actually faces, derived from the detected framework's idiomatic baseline. -->
-- **Ask only when there are genuinely 2 or more alternatives.** Mark the framework's recommendation as the **first option with "(recommended)"**.
-- For a **single standard** (no real alternative, e.g., NestJS validation = `class-validator`), **do not ask — adopt automatically with a one-line notice**.
-- Do not ask about areas already settled by code (measurement takes precedence).
-- Reflect the selection result in the §4 config `stack` + CLAUDE.md conventions, and mark the source as `(selected: user)` or `(standard: <framework> recommendation)` (explicitly noting it is not code-based).
+For stack decision points **not settled by code**, derive the options from the detected framework's idiomatic baseline (ORM choice, auth strategy, caching, …) — the entirety of new/empty projects plus the undecided areas of existing ones. Surface only the decision points this project actually faces.
+- Ask only with genuinely 2+ alternatives; mark the framework's recommendation as the **first option with "(recommended)"**.
+- A single standard (e.g., NestJS validation = `class-validator`) → adopt automatically with a one-line notice.
+- Never ask about areas already settled by code — measurement wins.
+- Record the result in the §4 config `stack` + CLAUDE.md conventions, marked `(selected: user)` or `(standard: <framework> recommendation)`.
 
 ## 2. Analysis Policy — Diverges by Whether Code Exists
-> **Document only what the codebase actually has — exclude the absent.** Write a convention only where there is real evidence for it. Do NOT pre-populate infrastructure the project does not use yet (e.g. queue, scheduler/cron, transaction, DI container, i18n, cache, guards; or on the frontend an unused state library, middleware, or error boundary). Those are documented later, when they are actually added during development. A frontend (Next.js) project that has no queue/scheduler/transaction simply has no such sections — that is correct, not a gap.
-- **Existing codebase** (meaningful source present) → **measured analysis**: read 2–4 representative files for each perspective below and extract rules with evidence (path:line). Only what is present.
-- **New/empty project** (manifest only, no/minimal src) → adopt only the **idiomatic baseline of the detected framework** needed to start (its conventional layout + lint/test commands); do not invent infrastructure that isn't there yet, and do not enumerate a fixed per-position syntax catalog — name the baseline using the framework's own conventions.
+> **Document only what the codebase actually has — exclude the absent.** Do NOT pre-populate unused infrastructure (queue, scheduler, transaction, DI container, i18n, cache, guards; on the frontend an unused state library, middleware, or error boundary) — those get documented when actually added. A project without them simply has no such sections; that is correct, not a gap.
+- **Existing codebase** → **measured analysis**: read 2–4 representative files per perspective and extract rules with evidence (path:line). Only what is present.
+- **New/empty project** → adopt only the detected framework's idiomatic baseline needed to start (conventional layout + lint/test commands); invent no infrastructure and enumerate no fixed per-position syntax catalog.
 - **Partial** → measure what exists, fill empty areas with standards.
-- Mark the source of each rule: the evidence file if measured, `(standard: <framework> recommendation)` if standard.
+- Mark each rule's source: the evidence file if measured, `(standard: <framework> recommendation)` if standard.
 
 ### Pitfall Avoidance During Measurement (Required)
-- **For assets with 0 usages, do not read signatures directly and fabricate**: for shared utils, base/abstract classes, and decorators never called anywhere in the code, *do not invent call examples*. Read the definition file and record only the signature truthfully (the shape of constructor arguments, method return types); if there are 0 applications, mark it as **"unapplied/convention"**. (If you imagine the argument order/names and make up a `new X(a,b)`-style example, it will almost always be wrong, conflicting with the actual `new X({...})`.)
-- **Trace `extends`/inheritance**: the rules of a derived DTO/class (constructor signature, required assignments, etc.) may live only in the base, so Read the base definition too.
-- **Aggressively detect prohibition/omission rules**: not only "what it does" but also "what it does *not* do" (unused options, prohibited decorators, prohibited call forms) are rules. Confirm absence with grep to capture them, and cross-check across 2 or more files of the same type to avoid missing micro-rules (decorator order, path slashes, single-line parameters, etc.).
-- **Implemented but unapplied = mark honestly**: infrastructure that was built but has 0 applications — derive what the project actually has from code evidence — should be marked "unapplied/convention" after a usage grep. Do not describe it as if it were applied (over-claim).
+- **0-usage assets: never fabricate call examples.** For shared utils, base classes, and decorators nothing calls, read the definition and record only the true signature; mark "unapplied/convention". An imagined `new X(a,b)`-style example is almost always wrong against the actual `new X({...})`.
+- **Trace `extends`/inheritance** — a derived class's rules (constructor signature, required assignments) may live only in the base; read the base definition too.
+- **Detect prohibition/omission rules** — what the code does *not* do (unused options, prohibited decorators, prohibited call forms) is also a rule; confirm absence with grep, and cross-check 2+ same-type files for micro-rules (decorator order, path slashes, single-line parameters, …).
+- **Implemented but unapplied = mark honestly** after a usage grep; never describe it as applied (over-claim).
 
-Perspectives, each framed as a derived architecture LAYER/UNIT view: architecture (LAYER/UNIT map) / conventions / data (DATA/AFFECTED STATE: persist OR fetch remote data) / error·response (OUTCOME/INTERFACE CONTRACT) / api (ENTRY POINT) / testing.
-<!-- These perspectives are positions for deriving the architecture's layers/units, not backend-only nouns. Map each onto what the detected stack actually uses, derived from code evidence (path:line) and named exactly as the project names it. -->
-Run measured analysis with fan-out (parallel-first: Workflow parallel / Task distribution / sequential when not possible). Agents: `${CLAUDE_PLUGIN_ROOT}/agents/` (architecture-mapper, convention-scout, test-pattern-analyzer).
+Perspectives, each a derived LAYER/UNIT view mapped onto what the detected stack actually uses (not backend-only nouns): architecture (LAYER/UNIT map) / conventions / data (DATA/AFFECTED STATE) / error·response (OUTCOME/INTERFACE CONTRACT) / api (ENTRY POINT) / testing.
+Run measured analysis with fan-out (parallel-first: Workflow parallel / Task distribution / sequential fallback). Agents: `${CLAUDE_PLUGIN_ROOT}/agents/` (architecture-mapper, convention-scout, test-pattern-analyzer).
 
 ## 3. Generating CLAUDE.md + docs/
-Write it in the structure of `${CLAUDE_PLUGIN_ROOT}/templates/CLAUDE.template.md`. For deep rules, use the skeletons in `${CLAUDE_PLUGIN_ROOT}/templates/docs/*.md` (architecture/conventions/data-layer/error-handling/api/testing) as the frame and fill them into `docs/<topic>.md`.
-- Satisfy the "what to include / depth" noted in each section/skeleton's comments. Put 1–2 line rules in the main body; separate deep rules that need examples/tables/procedures into docs/, leaving only a `→ details:` link in the body.
-- Delete unused sections/docs entirely (do not leave empty headers). For stacks heavy on data/entities, you may further split `data-layer.md` into `entity.md`/`repository.md`.
-- **testing.md must state the mock-boundary blind spot**: if the project's unit tests mock the data-access layer, that layer's query-mapping integration is executed by no spec — record this explicitly and fill the template's "Data-Access Smoke" section (no-connection query/metadata build convention when the stack supports it, e.g. TypeORM `buildMetadatas()`+`getSql()`; real-DB fallback otherwise; delete the section only if the project has no data-access layer).
-- Items adopted as standards may be updated as actual code accumulates (use `<!-- TODO -->` if needed).
+Structure from `${CLAUDE_PLUGIN_ROOT}/templates/CLAUDE.template.md`; deep rules use the `${CLAUDE_PLUGIN_ROOT}/templates/docs/*.md` skeletons (architecture/conventions/data-layer/error-handling/api/testing) filled into `docs/<topic>.md`.
+- 1–2 line rules in the main body; deep rules needing examples/tables/procedures go to docs/, leaving a `→ details:` link in the body.
+- Delete unused sections/docs entirely (no empty headers). Data-heavy stacks may split `data-layer.md` into `entity.md`/`repository.md`.
+- **testing.md must state the mock-boundary blind spot**: if the project's unit tests mock the data-access layer, no spec executes that layer's query mapping — record this explicitly and fill the template's "Data-Access Smoke" section (no-connection query/metadata build when the stack supports it, e.g. TypeORM `buildMetadatas()`+`getSql()`; real-DB fallback otherwise; delete the section only if there is no data-access layer).
+- Standard-adopted items may be updated as actual code accumulates (`<!-- TODO -->` if needed).
 
-**Completeness criterion**: each section must be deep enough to pass "Can I build one new domain to convention using only these rules?" Attach evidence to each rule (measured path or standard marking), and for core rules fill in example code, tables, and procedures down into docs/.
+**Completeness criterion**: each section deep enough to pass "Can I build one new domain to convention using only these rules?" — every rule carries evidence (measured path or standard marking), and core rules get example code/tables/procedures in docs/.
 
 ## 4. .beaver/config.json
 ```json
@@ -75,17 +70,16 @@ Write it in the structure of `${CLAUDE_PLUGIN_ROOT}/templates/CLAUDE.template.md
   "auto_approve": true
 }
 ```
-The `$NAME` in `test_one` is substituted when running a single test (e.g., `pytest -k $NAME` for pytest). Confirm commands with the user. `stack` includes the stack selected/adopted in §1.5.
 
-**No worktree dependency provisioning** — dependencies live in the real developer checkouts (main / `origin_branch`); the stick worktree is never populated with dependency dirs (`node_modules`, `.venv`, `vendor`, …) because nothing runs code there — build only writes tests, and the single full regression runs at ship on the `origin_branch` checkout, which already has its dependencies.
+**Config defaults (the JSON above is one example; no comments inside JSON)**: derive `stack`, `source_root`, `test_glob`, and the `build`/`test`/`test_one` commands from what this project actually uses (path:line), falling back to the framework baseline where code does not settle it. `test_one` substitutes `$NAME` for a single test the way the project's runner expects (e.g., `pytest -k $NAME`). If a separate data-access smoke suite exists (or is adopted per docs/testing.md), record it as `commands.test_smoke`. Confirm commands with the user. `stack` includes the §1.5 selections.
 
-**Config defaults (prose — the JSON above is one example; do not add comments inside JSON):** derive `stack`, `source_root`, `test_glob`, and the `build`/`test`/`test_one` commands from what this project actually uses — read them off the code/manifest (path:line) and name them exactly as the project does. Where code does not settle them, fall back to the detected framework's idiomatic baseline. `test_one` substitutes `$NAME` for a single test the way the project's test runner expects. If the project separates the data-access smoke suite (or one is adopted per docs/testing.md), record it as `commands.test_smoke` so it can run standalone. Confirm with the user.
+**No worktree dependency provisioning** — sticks never get dependency dirs (`node_modules`, `.venv`, `vendor`, …); nothing runs code there (build only writes tests; the regression runs at `/beaver:test` on a real checkout with dependencies).
 
-**`auto_approve` (default `true`)** — beaver's PreToolUse hook (`scripts/auto-approve.js`) auto-approves **in-project file edits** (`Write`/`Edit`/`MultiEdit`/`NotebookEdit`) so Claude Code does not prompt on every step of plan/build/ship. **Shell commands (`Bash`) are never auto-approved** — tests, `git push`, etc. still go through normal confirmation, and edits to files outside the project still prompt. Set `"auto_approve": false` to turn it off and get per-edit confirmation back.
+**`auto_approve` (default `true`)** — beaver's PreToolUse hook (`scripts/auto-approve.js`) auto-approves **in-project file edits** (`Write`/`Edit`/`MultiEdit`/`NotebookEdit`) so plan/build/ship do not prompt per edit. **`Bash` is never auto-approved** — tests, `git push`, and edits outside the project still prompt. `"auto_approve": false` restores per-edit confirmation.
 
-**`.gitignore` seed (required, idempotent)** — add the line `.beaver/.auto-branch-state.json` to the project's `.gitignore`. Append it if missing; create `.gitignore` if the project has none; skip silently if already present.
+**`.gitignore` seed (required, idempotent)** — ensure the line `.beaver/.auto-branch-state.json` exists in the project's `.gitignore` (append if missing; create the file if absent; skip if present).
 
-**`branch.stick_prefix` is the prefix for stick branches/worktrees (default `stick`).** plan isolates and creates the stick under `.claude/worktrees/` as `<stick_prefix>/<domain>-<rand6>` (e.g., `stick/user-a3f9c2`), and records the stick↔original-work-branch mapping in `.beaver/.auto-branch-state.json`. There is no separate integration-branch concept — the stick's isolation, merge, and teardown are handled by plan/ship (→ ship §3). analyze only records this value in config and does not create worktrees.
+**`branch.stick_prefix`** — prefix for stick branches/worktrees (default `stick`). plan creates `<stick_prefix>/<domain>-<rand6>` under `.claude/worktrees/` and records the stick↔origin mapping in `.beaver/.auto-branch-state.json`; isolation, merge, and teardown belong to plan/ship (→ ship §3). analyze only records this value.
 
 ## 5. Reporting
 Created/merged files, the proportion of rule sources (measured vs. standard), included/omitted sections, and the TODO list.

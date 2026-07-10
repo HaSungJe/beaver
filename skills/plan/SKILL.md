@@ -6,10 +6,10 @@ description: Plans a feature and writes the documents (spec → plan, or revisio
 # plan — Feature Planning (spec → plan / revision)
 
 ## 0. Prerequisites (main repo — reads only, plus one config seed)
-These run before the worktree exists, so they read from the main repo. Do **not** write anything here except the baseRef seed below.
+These run before the worktree exists, so they read from the main repo.
 - `CLAUDE.md` required. If missing, stop and direct the user to `/beaver:analyze`.
 - Read path and `branch` settings from `.beaver/config.json`.
-- **Ensure worktree settings**: verify that `worktree.baseRef` in `.claude/settings.json` is `"head"`, and if it is missing or different, set it to `"head"` (merge-patch, preserve other keys). This ensures EnterWorktree branches the stick from the currently checked-out HEAD (the default `fresh` uses origin/default-branch, which would miss develop and similar branches). **This is the only sanctioned main-repo write during planning** — EnterWorktree must read baseRef before the worktree exists, so it cannot live inside the worktree. It is idempotent (writes only when missing/different); everything after §2 is worktree-local.
+- **Ensure worktree settings**: `worktree.baseRef` in `.claude/settings.json` must be `"head"` — if missing or different, set it (merge-patch, preserve other keys) so EnterWorktree branches the stick from the current HEAD rather than origin/default-branch. This is the **only sanctioned main-repo write** during planning (EnterWorktree reads baseRef before the worktree exists). Idempotent; everything after §2 is worktree-local.
 
 ## 1. Mode Detection
 By the target feature name:
@@ -18,59 +18,59 @@ By the target feature name:
 When ambiguous, confirm with the user.
 
 ## 1.5 Mid-Flow Requests in Another Area
-A request in a different area may arrive while this flow is planning or in progress. Plan that request too — generate its documents instead of deferring it. The new request also goes through §1 mode detection on its own. If the two areas touch or affect each other, add it to the documents already in progress (spec/plan/revision). If not, write new documents under the new area's own domain path.
+A request in a different area arriving mid-flow is also planned — generate its documents instead of deferring, with its own §1 mode detection. If the two areas touch or affect each other, add it to the documents already in progress; if not, write new documents under the new area's own domain path.
 
 ## 1.6 Documents Only Until Build
-From here until `/beaver:build` runs, every user request in this flow is a planning request — answer it by writing or updating documents, never by editing source or test code. A request worded as direct code work ("add X", "delete Y", "fix Z") is also reflected in the spec/plan/revision only, and reported as a document change. The only permitted writes are the planning artifacts: `.beaver/output/` documents, `.beaver/memory/`, the §4.5 draft convention docs, and the §0/§2 bookkeeping files. Editing real code here leaves the plan/revision describing an older version than the code; the documents must always be the newer of the two.
+From here until `/beaver:build`, every user request in this flow is a planning request — answer by writing or updating documents, never by editing source or test code. Requests worded as direct code work ("add X", "delete Y", "fix Z") are reflected in the spec/plan/revision only and reported as document changes. Permitted writes: `.beaver/output/` documents, `.beaver/memory/`, the §4.5 draft convention docs, and the §0/§2 bookkeeping files. The documents must always be the newer of the two — editing real code here breaks that.
 
 ## 1.7 Merge and Obsolete-Code Check (every code addition or deletion)
-Before designing any code addition, identify the existing code it merges into — the files, units, and patterns the new code must join — and design the integration against that evidence (path:line). Then check whether the addition or deletion makes any existing code unnecessary — replaced branches, helpers nothing calls anymore, unused imports, dead config — and include deleting it in the plan/revision change set. A design that only adds and never removes what it replaces is incomplete.
+Before designing an addition, identify the existing code it merges into — the files, units, and patterns it must join — and design the integration against that evidence (path:line). Then check whether the change makes existing code unnecessary — replaced branches, uncalled helpers, unused imports, dead config — and include deleting it in the change set. A design that only adds and never removes what it replaces is incomplete.
 
 ## 1.8 Sibling Contract Conformance (every new unit)
 Before designing a new function or unit, find its siblings — existing units in the same module or adjacent code that perform the same kind of operation. If a sibling exists, the new unit follows the sibling's responsibility split: where errors are handled, what is thrown or returned, and who validates the result. Cite that sibling as evidence (path:line) in the proposal. Deviating from the sibling's split is a decision — propose it with the reason and get user confirmation before the spec or revision is finalized. A design that adopts a different split without citing the sibling is incomplete.
 
 ## 2. Enter the Worktree FIRST (stick isolation)
-Enter the worktree **before any write**. Only the git reads in §0–§1 precede it. Every write below — memory, spec, plan, revision, convention docs — then lands worktree-local and reaches the original branch only when ship merges the stick. This isolates the stick into `.claude/worktrees/` and moves the session there — the original working directory is left untouched (enables parallel sessions).
+Enter the worktree **before any write** — only the git reads in §0–§1 precede it. Every write below then lands worktree-local and reaches the original branch only when ship merges the stick. The original working directory is left untouched (parallel sessions possible).
 
-- **If already inside a stick worktree** (the current cwd is `.claude/worktrees/<stick>` and `.beaver/.auto-branch-state.json` has the corresponding key) → keep accumulating there (do not create a new one).
+- **Already inside a stick worktree** (cwd is `.claude/worktrees/<stick>` and `.beaver/.auto-branch-state.json` has the key) → keep accumulating there.
 - Otherwise:
-  1. `origin_branch = git branch --show-current` — the target ship will revert to. If empty (detached), stop and direct the user to check out a branch.
-  2. stick name = `<stick_prefix>/<domain>-<rand6>` (default `stick/...`). Extract the domain from the feature name/request.
-  3. Call `EnterWorktree(name=<stick>)` → CC creates `.claude/worktrees/<stick>` + switches the session cwd (base = current HEAD, with baseRef=head from §0).
-  4. Record `{ "<stick>": "<origin_branch>" }` in `.beaver/.auto-branch-state.json`. If the project's `.gitignore` lacks the line `.beaver/.auto-branch-state.json`, add it (analyze normally seeds this; safety net for projects analyzed before that existed).
+  1. `origin_branch = git branch --show-current` — the target ship will return to. Empty (detached) → stop and direct the user to check out a branch.
+  2. stick name = `<stick_prefix>/<domain>-<rand6>` (default `stick/...`); extract the domain from the feature name/request.
+  3. `EnterWorktree(name=<stick>)` → creates `.claude/worktrees/<stick>` + switches the session cwd (base = current HEAD via §0 baseRef).
+  4. Record `{ "<stick>": "<origin_branch>" }` in `.beaver/.auto-branch-state.json`. If the project's `.gitignore` lacks that line, add it.
 
-  The worktree is **not** populated with dependency dirs: nothing runs code in the worktree (build writes tests but does not execute them; the full regression runs at ship on the original-branch checkout, which already has dependencies).
+  The worktree gets no dependency dirs — nothing runs code there; tests execute only at `/beaver:test`, on a real checkout.
 
-Announce the created worktree, stick, and origin_branch in one line. Both stick and worktree are local-only — remote push happens only in ship.
+Announce the worktree, stick, and origin_branch in one line. Both are local-only — remote push happens only in ship.
 
-**Now inside the worktree — read memory first**: read `.beaver/memory/` (MEMORY.md + relevant topics) and apply it to the plan with **top priority** (memory > CLAUDE.md). If the user points out a persistent rule during planning, confirm and save it (worktree-local, ships with the stick) — protocol `${CLAUDE_PLUGIN_ROOT}/templates/memory-protocol.md`.
+**Now inside the worktree — read memory first**: `.beaver/memory/` (MEMORY.md + relevant topics), applied with **top priority** (memory > CLAUDE.md). If the user points out a persistent rule, confirm and save it (worktree-local, ships with the stick) — protocol `${CLAUDE_PLUGIN_ROOT}/templates/memory-protocol.md`.
 
 ## 3. New Mode (analysis → conversation → spec → plan)
-> **decision** = an item that CLAUDE.md/memory alone cannot settle and that requires user confirmation.
+> **decision** = an item CLAUDE.md/memory cannot settle; requires user confirmation.
 > **Artifacts** — spec: `.beaver/output/spec/<domain>/<feature>-spec.md` (`templates/spec.md`), plan: `.beaver/output/plan/<domain>/<feature>-plan.md` (`templates/plan.md`).
 
-1. **Deep analysis — fan-out sized to the task.** First a cheap inline pre-scan locates the feature's domain dir + adjacent subsystems (= the **read scope**) and judges routine-vs-net-new. Then size the fan-out — each subagent pays a full context-boot cost and cold-reads files, so token cost grows ~linearly with agent count while wall-clock only drops ~1/N; spend agents only where they pay off:
-   - **Routine feature matching an existing pattern** → **no fan-out**. One inline scoped pass over the located paths. Subagent boot cost outweighs the benefit on small tasks.
-   - **Net-new / multi-subsystem / complex** → parallel fan-out (Workflow parallel / Task distribution / sequential when not possible), but give **each agent its explicit read scope** (the located dirs/files) — never "read the whole codebase". Scoped reads stop agents cold-reading the same shared files. Use only the agents that apply (2–4), drop the rest. Agents under `${CLAUDE_PLUGIN_ROOT}/agents/`:
+1. **Deep analysis — fan-out sized to the task.** A cheap inline pre-scan locates the feature's domain dir + adjacent subsystems (= the **read scope**) and judges routine vs net-new. Each subagent pays a full context-boot cost and cold-reads files — spend agents only where they pay off:
+   - **Routine feature matching an existing pattern** → no fan-out; one inline scoped pass.
+   - **Net-new / multi-subsystem / complex** → parallel fan-out (Workflow parallel / Task distribution / sequential fallback), each agent given an **explicit read scope** — never "read the whole codebase". Use only the agents that apply (2–4), from `${CLAUDE_PLUGIN_ROOT}/agents/`:
      - architecture-mapper — structure of adjacent subsystems
      - convention-scout — conventions for this domain
-     - test-pattern-analyzer — test conventions: derive from this project's actual test setup by code evidence (path:line) and use the project's own tools/names; assume no particular stack's syntax.
-   - reuse/adjacency scan (**always inline**, never an agent) — similar features, reusable units of work, and the affected data/state. Derive what this project actually treats as a reusable unit and what data/state the feature persists or fetches from code evidence (path:line), using the project's own names.
-2. **Classification** — determine whether the feature is ① an **addition to an existing pattern** (a routine feature that matches a pattern already present in this project) or ② **net-new** (a special area not present in the current code/conventions). Judge "matches an existing pattern" by what this project's code actually does; if net-new, add a **technical implementation review + proposal** (required libraries/approaches/alternatives) for the decision points this project genuinely has to settle.
+     - test-pattern-analyzer — test conventions derived from this project's actual setup, by code evidence (path:line), in the project's own tools/names; no stack assumptions.
+   - reuse/adjacency scan (**always inline**, never an agent) — similar features, reusable units of work, affected data/state; derive all of it from code evidence (path:line), in the project's own names.
+2. **Classification** — ① **addition to an existing pattern** (routine; matches what this project's code already does) or ② **net-new** (an area absent from current code/conventions). If net-new, add a **technical implementation review + proposal** (required libraries/approaches/alternatives) for the decision points this project genuinely faces.
 3. **Proposal** — "integrate with existing `X` / reuse existing `Y` pattern / 2-3 design approaches (tradeoffs, recommendation)" with evidence (path:line).
-4. **Interactive one-question-at-a-time** — instead of dumping a blank spec, ask **one at a time**: design-approach selection, undecided decisions. Collect answers.
-5. **Auto-generate spec** — once settled, **automatically write** the spec document (feature description / API / business rules / references + code-evidence-backed proposals + confirmed decisions and their rationale). There must be no unanswered decisions before the next step.
-6. **Write plan** — plan document: file list / per-layer design / test cases / response codes + **prerequisite items** (`- [ ]` when infrastructure is absent; build is blocked until all are `[x]`). **Data-access smoke is mandatory when applicable**: if any planned data-access method uses a mapping-sensitive query construct (criteria on a field mapped differently from its storage column, or a dynamically composed query — definition in docs/testing.md "Data-Access Smoke"), the Test Cases section must include a `[SMOKE:data-access]` case — the plan is incomplete without it; covering such a method with data-access-mock specs alone is not acceptable coverage. Each per-layer design section carries the **actual code to be written** in fenced code blocks — full content for a new file, the changed part for a modified file; no pseudocode or signature-only stubs, so the plan alone conveys the implementation at a glance. On save, the validator hook verifies it automatically (a Design section without code blocks is rejected). Read "per-layer design" and "response codes" as the unit-by-unit design plus the interface contract each entry point makes — the result its callers depend on — designed against the layers, entry points, and outcomes this project actually has, named as the project names them. The section names stay as-is; for projects without HTTP response codes, read "response codes" as each entry point's outcome contract.
+4. **Interactive one-question-at-a-time** — instead of dumping a blank spec, ask design-approach selection and undecided decisions **one at a time**; collect answers.
+5. **Auto-generate spec** — once settled, write the spec automatically (feature description / API / business rules / references + evidence-backed proposals + confirmed decisions with rationale). No unanswered decisions may remain before the next step.
+6. **Write plan** — plan document: file list / per-layer design / test cases / response codes + **prerequisite items** (`- [ ]` when infrastructure is absent; build blocked until all `[x]`). **Data-access smoke when applicable**: if a planned data-access method uses a mapping-sensitive query construct (definition: docs/testing.md "Data-Access Smoke"), the Test Cases section must include a `[SMOKE:data-access]` case — mock-only coverage is not acceptable and the plan is incomplete without it. Each per-layer design section carries the **actual code to be written** in fenced code blocks — full content for a new file, the changed part for a modified one; no pseudocode or signature-only stubs. On save, the validator hook rejects a Design section without code blocks. Read "per-layer design" and "response codes" as the unit-by-unit design plus each entry point's interface contract, mapped onto the layers, entry points, and outcomes this project actually has, in the project's own names; for projects without HTTP response codes, read "response codes" as each entry point's outcome contract.
 
 ## 4. Change Mode
 Based on `${CLAUDE_PLUGIN_ROOT}/templates/revision.md`: `.beaver/output/revision/<domain>/<feature>-revision-<YYMMDD>-<N>.md`. The original spec/plan are reference only. The Code Changes section carries the **actual code** per affected file, before → after, in fenced code blocks — same at-a-glance rule as the plan's Design section.
 
 ## 4.5 Convention-Area Reinforcement (only for a new area)
-Using the §3 code/pattern scan, determine whether the planned feature introduces a **new convention area not present** in the current `docs/`/`CLAUDE.md` (e.g., websocket, payment, cache, real-time, etc.).
-- For a **routine feature in an existing area** (yet another CRUD, etc.), do not ask — follow the existing conventions.
-- For a **new area**, after the plan document is finalized, propose **"Should I reflect this design's conventions in docs?"** — preview what would be written (e.g., new `docs/<topic>.md` + a `CLAUDE.md` section/checklist link). On approval, write it in the **same doc structure** as `analyze`; if skipped, leave it only in the plan document.
-- Since this is written before code exists, attach a **draft marker** — at the head of the new convention section/document, add `<!-- beaver:draft based on planning · unconfirmed before ship -->`. build updates it to follow the code, and ship §2 verifies and finalizes it (removing the marker).
-- The edits happen on the current **stick branch**, so they move together with the feature as one bundle.
+Using the §3 scan, determine whether the feature introduces a **convention area absent** from the current `docs/`/`CLAUDE.md` (websocket, payment, cache, real-time, …).
+- **Routine feature in an existing area** → do not ask; follow existing conventions.
+- **New area** → after the plan is finalized, propose "reflect this design's conventions in docs?" with a preview (new `docs/<topic>.md` + `CLAUDE.md` section/checklist link). On approval, write in the same doc structure as `analyze`; if skipped, leave it only in the plan document.
+- Written before code exists, so attach a **draft marker** at the head: `<!-- beaver:draft based on planning · unconfirmed before ship -->`. build keeps it synced to the code; ship §1 verifies and finalizes it (removing the marker).
+- Edits happen on the stick branch, moving with the feature as one bundle.
 
 ## 5. Reporting
 File path + the guidance "review, then `/beaver:build`".

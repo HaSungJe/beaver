@@ -5,11 +5,11 @@ description: Runs the full regression suite (commands.test) and self-heals on fa
 
 # test — Full Regression with Self-Heal (standalone)
 
-Runs the project's **entire** test suite (`commands.test`). On green it reports and stops. On **red** it does not just report — it autonomously fixes the **source** and re-runs, looping until green (within guards), then commits the fix and pushes after confirmation. Separated out of ship so it can be run on demand; build writes tests but never runs them, this skill is where they execute — and now heal.
+Runs the project's **entire** test suite (`commands.test`). Green → report and stop. **Red** → autonomously fix the **source** and re-run until green (within guards), then commit the fix and push after confirmation. Separated out of ship for on-demand runs; build writes tests but never runs them — this skill is where they execute and heal.
 
 ## 0. Preconditions (stop and explain if broken)
 - `.beaver/config.json` exists and defines `commands.test`. If missing, stop and direct the user to `/beaver:analyze`.
-- **Run on a branch that has a remote** — the current branch must have a remote tracking ref (check `git rev-parse --abbrev-ref --symbolic-full-name @{u}`, or `git ls-remote --exit-code origin <branch>`). This deliberately excludes **stick worktrees** (local-only branches): self-heal edits source, commits, and pushes, so it must run on a real developer checkout — the original branch after ship — which has its dependencies installed. If there is no remote, stop and tell the user to run it on the original branch (typically after `/beaver:ship`), not inside a stick.
+- **Run on a branch with a remote** — check `git rev-parse --abbrev-ref --symbolic-full-name @{u}` (or `git ls-remote --exit-code origin <branch>`). This deliberately excludes **stick worktrees** (local-only branches): self-heal edits source, commits, and pushes, so it needs a real developer checkout with dependencies — typically the original branch after `/beaver:ship`. No remote → stop and direct the user there, not inside a stick.
 - The checkout is assumed to have its dependencies installed. If `commands.test` fails at module resolution, install dependencies (`commands.setup`/`npm ci`/etc.) and retry — do not improvise inside this skill.
 
 ## 1. Self-heal loop
