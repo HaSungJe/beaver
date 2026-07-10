@@ -8,7 +8,7 @@ description: Plans a feature exactly like plan but WITHOUT a stick worktree — 
 Identical to `/beaver:plan` in every planning step, except **no stick worktree is created**: everything happens on the currently checked-out branch, in the current working directory. The subsequent `/beaver:build` accumulates in place, and `/beaver:ship` runs in **direct mode** — a plain commit + push on the current branch (no merge, no worktree destroy).
 
 ## How to run
-Execute `${CLAUDE_PLUGIN_ROOT}/skills/plan/SKILL.md` **with the overrides below**. Every section not overridden applies verbatim — mode detection (§1), mid-flow requests in another area (§1.5), documents only until build (§1.6), merge and obsolete-code check (§1.7), new mode (§3), change mode (§4), convention-area reinforcement (§4.5), reporting (§5).
+Execute `${CLAUDE_PLUGIN_ROOT}/skills/plan/SKILL.md` **with the overrides below**. Every section not overridden applies verbatim — mode detection (§1), mid-flow requests in another area (§1.5), documents only until build (§1.6), merge and obsolete-code check (§1.7), sibling contract conformance (§1.8), new mode (§3), change mode (§4), convention-area reinforcement (§4.5), reporting (§5).
 
 1. **§0 (prerequisites)** — apply as written, **except skip the `worktree.baseRef` seed entirely** (no worktree will be created, so it is unnecessary; do not write `.claude/settings.json`).
 2. **§2 (worktree entry) — replaced**:

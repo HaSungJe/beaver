@@ -26,6 +26,9 @@ From here until `/beaver:build` runs, every user request in this flow is a plann
 ## 1.7 Merge and Obsolete-Code Check (every code addition or deletion)
 Before designing any code addition, identify the existing code it merges into — the files, units, and patterns the new code must join — and design the integration against that evidence (path:line). Then check whether the addition or deletion makes any existing code unnecessary — replaced branches, helpers nothing calls anymore, unused imports, dead config — and include deleting it in the plan/revision change set. A design that only adds and never removes what it replaces is incomplete.
 
+## 1.8 Sibling Contract Conformance (every new unit)
+Before designing a new function or unit, find its siblings — existing units in the same module or adjacent code that perform the same kind of operation. If a sibling exists, the new unit follows the sibling's responsibility split: where errors are handled, what is thrown or returned, and who validates the result. Cite that sibling as evidence (path:line) in the proposal. Deviating from the sibling's split is a decision — propose it with the reason and get user confirmation before the spec or revision is finalized. A design that adopts a different split without citing the sibling is incomplete.
+
 ## 2. Enter the Worktree FIRST (stick isolation)
 Enter the worktree **before any write**. Only the git reads in §0–§1 precede it. Every write below — memory, spec, plan, revision, convention docs — then lands worktree-local and reaches the original branch only when ship merges the stick. This isolates the stick into `.claude/worktrees/` and moves the session there — the original working directory is left untouched (enables parallel sessions).
 
