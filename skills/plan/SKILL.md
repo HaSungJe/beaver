@@ -17,6 +17,9 @@ By the target feature name:
 - Otherwise → **new mode** (spec → plan).
 When ambiguous, confirm with the user.
 
+## 1.5 Mid-Flow Requests in Another Area
+A request in a different area may arrive while this flow is planning or in progress. Plan that request too — generate its documents instead of deferring it. The new request also goes through §1 mode detection on its own. If the two areas touch or affect each other, add it to the documents already in progress (spec/plan/revision). If not, write new documents under the new area's own domain path.
+
 ## 2. Enter the Worktree FIRST (stick isolation)
 Enter the worktree **before any write**. Only the git reads in §0–§1 precede it. Every write below — memory, spec, plan, revision, convention docs — then lands worktree-local and reaches the original branch only when ship merges the stick. This isolates the stick into `.claude/worktrees/` and moves the session there — the original working directory is left untouched (enables parallel sessions).
 
