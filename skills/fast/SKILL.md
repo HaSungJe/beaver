@@ -8,7 +8,7 @@ description: Plans a feature exactly like plan but WITHOUT a stick worktree — 
 Identical to `/beaver:plan` in every planning step, except **no stick worktree is created**: everything happens on the currently checked-out branch, in the current working directory. The subsequent `/beaver:build` accumulates in place, and `/beaver:ship` runs in **direct mode** — a plain commit + push on the current branch (no merge, no worktree destroy).
 
 ## How to run
-Execute `${CLAUDE_PLUGIN_ROOT}/skills/plan/SKILL.md` **with the overrides below**. Every section not overridden applies verbatim — mode detection (§1), mid-flow requests in another area (§1.5), new mode (§3), change mode (§4), convention-area reinforcement (§4.5), reporting (§5).
+Execute `${CLAUDE_PLUGIN_ROOT}/skills/plan/SKILL.md` **with the overrides below**. Every section not overridden applies verbatim — mode detection (§1), mid-flow requests in another area (§1.5), documents only until build (§1.6), merge and obsolete-code check (§1.7), new mode (§3), change mode (§4), convention-area reinforcement (§4.5), reporting (§5).
 
 1. **§0 (prerequisites)** — apply as written, **except skip the `worktree.baseRef` seed entirely** (no worktree will be created, so it is unnecessary; do not write `.claude/settings.json`).
 2. **§2 (worktree entry) — replaced**:
@@ -18,6 +18,7 @@ Execute `${CLAUDE_PLUGIN_ROOT}/skills/plan/SKILL.md` **with the overrides below*
    - Announce in one line: "fast mode — no worktree; working directly on `<branch>`; ship will commit + push here."
    - Then, exactly like plan §2's tail, **read memory first**: `.beaver/memory/` (MEMORY.md + relevant topics), applied with top priority (memory > CLAUDE.md).
 3. **All writes** (spec / plan / revision / memory / draft convention docs) land directly on the current branch — nothing is isolated. Parallel sessions on the same checkout will conflict; that is the accepted tradeoff of fast. When isolation or parallel work matters, use `/beaver:plan`.
+4. **Plan §1.6 applies with extra force here**: there is no worktree, so a stray source edit lands on the working branch immediately. Until `/beaver:build`, write documents only — never source or test code.
 
 ## Downstream (direct mode)
 - `/beaver:build` — finds the plan in the main checkout's `.beaver/output/` and works **in place** on the current branch (build §0 direct mode). Test-execution policy is unchanged: build still writes tests without running them; the run belongs to `/beaver:test`.

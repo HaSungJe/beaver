@@ -20,6 +20,12 @@ When ambiguous, confirm with the user.
 ## 1.5 Mid-Flow Requests in Another Area
 A request in a different area may arrive while this flow is planning or in progress. Plan that request too — generate its documents instead of deferring it. The new request also goes through §1 mode detection on its own. If the two areas touch or affect each other, add it to the documents already in progress (spec/plan/revision). If not, write new documents under the new area's own domain path.
 
+## 1.6 Documents Only Until Build
+From here until `/beaver:build` runs, every user request in this flow is a planning request — answer it by writing or updating documents, never by editing source or test code. A request worded as direct code work ("add X", "delete Y", "fix Z") is also reflected in the spec/plan/revision only, and reported as a document change. The only permitted writes are the planning artifacts: `.beaver/output/` documents, `.beaver/memory/`, the §4.5 draft convention docs, and the §0/§2 bookkeeping files. Editing real code here leaves the plan/revision describing an older version than the code; the documents must always be the newer of the two.
+
+## 1.7 Merge and Obsolete-Code Check (every code addition or deletion)
+Before designing any code addition, identify the existing code it merges into — the files, units, and patterns the new code must join — and design the integration against that evidence (path:line). Then check whether the addition or deletion makes any existing code unnecessary — replaced branches, helpers nothing calls anymore, unused imports, dead config — and include deleting it in the plan/revision change set. A design that only adds and never removes what it replaces is incomplete.
+
 ## 2. Enter the Worktree FIRST (stick isolation)
 Enter the worktree **before any write**. Only the git reads in §0–§1 precede it. Every write below — memory, spec, plan, revision, convention docs — then lands worktree-local and reaches the original branch only when ship merges the stick. This isolates the stick into `.claude/worktrees/` and moves the session there — the original working directory is left untouched (enables parallel sessions).
 
