@@ -1,9 +1,11 @@
 ---
 name: plan
-description: 기능을 기획해 문서(spec → plan, 변경이면 revision)를 작성한다. "기능 계획", "기능 생성", "기능 수정", "<기능명> 기획", "plan a feature" 요청에 발동. 신규/변경 자동 판별. analyze가 만든 CLAUDE.md 규약이 있어야 동작.
+description: 격리 옵트인 — 전용 git worktree(stick 브랜치) 안에서 기능을 기획한다. fast와 동일한 spec → plan / revision 흐름이지만 작업이 격리되어 병렬 세션과 충돌하지 않는다. 워크트리 격리·병렬 안전 작업을 명시적으로 원할 때만 사용. "워크트리로 기획", "격리해서 기획", "stick으로 기획", "isolated planning", "parallel planning" 요청에 발동. 신규/변경 자동 판별. analyze가 만든 CLAUDE.md 규약이 있어야 동작. 격리가 필요 없는 기본 흐름은 fast.
 ---
 
 # plan — 기능 기획 (spec → plan / revision)
+
+**격리 옵트인.** beaver의 기본 기획 진입점은 `/beaver:fast`(워크트리 없이 현재 브랜치에서 바로)다; `plan`은 격리·병렬 안전 작업을 위해 stick 워크트리를 명시적으로 원할 때만 쓴다 — 기획 절차 자체는 동일하다.
 
 ## 0. 전제 (메인 레포 — 읽기만, 설정 시드 1개 제외)
 워크트리가 생기기 전 단계라 메인 레포에서 읽는다.

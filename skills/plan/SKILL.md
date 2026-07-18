@@ -1,9 +1,11 @@
 ---
 name: plan
-description: Plans a feature and writes the documents (spec → plan, or revision for a change). Triggers on "기능 계획", "기능 생성", "기능 수정", "<기능명> 기획", "plan a feature", "plan feature", "create feature", "modify feature" requests. Auto-detects new vs. change. Requires the CLAUDE.md convention produced by analyze to operate.
+description: Isolation opt-in — plans a feature inside a dedicated git worktree (stick branch); same spec → plan / revision flow as fast, but work stays isolated so parallel sessions do not conflict. Use only when worktree isolation or parallel-safe work is explicitly wanted. Triggers on "워크트리로 기획", "격리해서 기획", "stick으로 기획", "plan in a worktree", "isolated planning", "parallel planning" requests. Auto-detects new vs. change. Requires the CLAUDE.md convention produced by analyze to operate. For the default no-worktree flow, use fast.
 ---
 
 # plan — Feature Planning (spec → plan / revision)
+
+**Isolation opt-in.** beaver's default planning entry is `/beaver:fast` (no worktree, directly on the current branch); use `plan` only when you explicitly want a stick worktree for isolation or parallel-safe work — the planning steps are otherwise identical.
 
 ## 0. Prerequisites (main repo — reads only, plus one config seed)
 These run before the worktree exists, so they read from the main repo.

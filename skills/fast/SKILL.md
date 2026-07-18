@@ -1,11 +1,11 @@
 ---
 name: fast
-description: Plans a feature exactly like plan but WITHOUT a stick worktree — documents land directly on the current branch. Triggers on "빠른 기획", "워크트리 없이 기획", "fast plan", "plan on current branch", "fast <feature>" requests. Auto-detects new vs. change. Requires the CLAUDE.md convention produced by analyze to operate.
+description: Default planning entry — plans a feature directly on the current branch WITHOUT a stick worktree (spec → plan, or a revision for a change); documents land on the current branch and downstream build/ship run in direct mode. Use for any feature create/modify/plan request that does not explicitly ask for worktree isolation. Triggers on "기능 계획", "기능 생성", "기능 수정", "<기능명> 기획", "이 기능 만들어줘", "빠른 기획", "plan a feature", "create feature", "modify feature", "fast <feature>" and any bare feature-planning request with no stage named. Auto-detects new vs. change. Requires the CLAUDE.md convention produced by analyze to operate.
 ---
 
-# fast — plan without a worktree (directly on the current branch)
+# fast — plan without a worktree, directly on the current branch (default planning entry)
 
-Identical to `/beaver:plan` in every planning step, except **no stick worktree is created**: everything happens on the currently checked-out branch, in the current working directory. The subsequent `/beaver:build` accumulates in place, and `/beaver:ship` runs in **direct mode** — a plain commit + push on the current branch (no merge, no worktree destroy).
+**This is beaver's default planning entry** — a bare feature request with no stage named lands here; `/beaver:plan` is the opt-in for worktree isolation. Identical to `/beaver:plan` in every planning step, except **no stick worktree is created**: everything happens on the currently checked-out branch, in the current working directory. The subsequent `/beaver:build` accumulates in place, and `/beaver:ship` runs in **direct mode** — a plain commit + push on the current branch (no merge, no worktree destroy).
 
 ## How to run
 Execute `${CLAUDE_PLUGIN_ROOT}/skills/plan/SKILL.md` **with the overrides below**. Every section not overridden applies verbatim — mode detection (§1), mid-flow requests in another area (§1.5), documents only until build (§1.6), merge and obsolete-code check (§1.7), sibling contract conformance (§1.8), new mode (§3), change mode (§4), convention-area reinforcement (§4.5), reporting (§5).

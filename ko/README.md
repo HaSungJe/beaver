@@ -1,6 +1,6 @@
 # 🦫 Beaver
 
-코드베이스를 먼저 분석해 프로젝트 규약 문서(`CLAUDE.md`)를 만들고, 그 규약을 단일 근거로 **분석 → 기획 → 개발 → 배포(원래 브랜치 병합·푸쉬) → 리팩토링**을 일관되게 수행하는 Claude Code 플러그인. 기획·구현은 `.claude/worktrees/`에 격리된 stick 워크트리에서 이뤄져 **여러 세션 병렬 작업**이 가능하다. 언어·프레임워크·포지션 무관 — 백엔드(NestJS · Spring · Python · Go · …), 프런트엔드(Next.js · React), 그리고 모바일 · CLI · 라이브러리 프로젝트까지 동일하게.
+코드베이스를 먼저 분석해 프로젝트 규약 문서(`CLAUDE.md`)를 만들고, 그 규약을 단일 근거로 **분석 → 기획 → 개발 → 배포(원래 브랜치 병합·푸쉬) → 리팩토링**을 일관되게 수행하는 Claude Code 플러그인. 기획·구현은 **기본적으로 현재 브랜치에서 바로**(`fast`) 이뤄지고, 선택적 **stick 워크트리 격리** 모드(`plan`)로 **여러 세션 병렬 작업**이 가능하다. 언어·프레임워크·포지션 무관 — 백엔드(NestJS · Spring · Python · Go · …), 프런트엔드(Next.js · React), 그리고 모바일 · CLI · 라이브러리 프로젝트까지 동일하게.
 
 <!-- Beaver는 백엔드 스택에 묶이지 않는다. 네 가지 핵심 용어로 포지션을 가로질러 일반화한다 — LAYER/UNIT(책임 단위), ENTRY POINT(외부 도달 표면), DATA/AFFECTED STATE(읽고/바꾸는 상태), OUTCOME/INTERFACE CONTRACT(진입점이 만드는 결과). 각 용어는 이 프로젝트가 실제로 쓰는 것으로 채워진다 — analyze가 코드 근거(경로:라인)로 도출해 프로젝트가 쓰는 이름 그대로 기록하며, 특정 포지션 구문을 가정하지 않고 실재하는 구성요소를 발견한다. -->
 
@@ -8,12 +8,12 @@
 ## 기대 효과
 
 - **일관성** — 모든 산출물이 실제 코드에서 도출된 `CLAUDE.md` 규약을 따른다.
-- **표준 절차** — 기능마다 기획 → 개발 → 배포(ship)가 동일한 흐름으로 반복되고, ship이 원래 작업 브랜치로 직접 병합·푸쉬한다.
+- **표준 절차** — 기능마다 **fast → 개발 → 배포(ship)**가 현재 브랜치에서 동일한 흐름으로 반복되고, ship이 현재 브랜치를 바로 커밋·푸쉬한다. 병렬 안전 작업이 필요하면 `plan`이 stick 워크트리 격리로 대체하고, ship이 원래 브랜치로 병합·푸쉬한다.
 - **병렬 작업** — stick을 `.claude/worktrees/`에 격리하므로(세션 cwd 전환), 세션마다 다른 기능을 동시에 진행해도 충돌하지 않는다.
 - **회귀 방지** — 문서 구조 검증 + 독립 전체 회귀(`/beaver:test` → `commands.test`, 워크트리가 아닌 실제 체크아웃=ship 후 원래 브랜치에서) + 병합 충돌 인라인 해결. **테스트가 도는 곳**: build는 테스트를 **작성만** 하고 실행하지 않으며, 유일한 테스트 실행은 `/beaver:test`다.
 - **규칙 누적(memory)** — 작업 중 사용자 지적을 `.beaver/memory/` 에 누적해 이후 작업서 **최우선**(memory > CLAUDE.md > 기본) 적용. 같은 지적을 반복하지 않는다.
 - **다언어 지원** — 스택을 감지해 테스트·빌드 커맨드를 `.beaver/config.json` 에 기록하므로 언어에 비종속.
-- **검수 지점 확보** — plan 대화형 결정 게이트, ship의 코드 리뷰, 승인 기반 커밋·병합·푸쉬로 매 단계 사람이 확인한다.
+- **검수 지점 확보** — 기획 단계의 대화형 결정 게이트, ship의 코드 리뷰, 승인 기반 커밋·병합·푸쉬로 매 단계 사람이 확인한다.
 
 ---
 
@@ -43,8 +43,8 @@ Claude Code에서:
 | 묶음 | 단계 | 슬래시 | 자연어 예시 | 하는 일 |
 |---|---|---|---|---|
 | 분석 (독립·1회) | **분석** | `/beaver:analyze` | "코드베이스 분석해줘" | 코드 실측(없으면 프레임워크 표준)으로 `CLAUDE.md` + `docs/` 규약 + `.beaver/config.json` 생성·갱신, 기존 CLAUDE.md·memory 병합·반영 |
-| 기획·구현 | **기획** | `/beaver:plan <기능명>` | "<기능명> 기획해줘" | 신규/변경 자동 판별 → stick 워크트리 격리 생성·진입 → 코드베이스 병렬 심층분석(신규/추가 판별, 신규면 기술검토) → 대화형 1문1답으로 결정 → spec 자동생성 + plan(변경이면 revision) 작성(저장 시 검증 훅). 새 규약 영역이면 draft 문서 |
-| 기획·구현 | **빠른 기획** | `/beaver:fast <기능명>` | "<기능명> 빠른 기획" | plan과 동일하되 **stick 워크트리 없이** — 현재 브랜치에서 바로 기획. build도 그 자리에서 작업하고, ship은 현재 브랜치를 바로 커밋 + 푸쉬(병합·worktree 파기 없음) |
+| 기획·구현 | **빠른 기획** (기본) | `/beaver:fast <기능명>` | "<기능명> 기획해줘" · "<기능명> 추가" | 신규/변경 자동 판별 → 코드베이스 병렬 심층분석(신규/추가 판별, 신규면 기술검토) → 대화형 1문1답으로 결정 → spec 자동생성 + plan(변경이면 revision)을 **현재 브랜치에서 바로** 작성(워크트리 없음; 저장 시 검증 훅). 이후 build/ship은 direct 모드. **격리를 요구하지 않는 모든 기능 요청의 기본 진입점** |
+| 기획·구현 | **기획** (격리 옵트인) | `/beaver:plan <기능명>` | "워크트리로 기획" · "격리해서 기획" | 빠른 기획과 동일한 흐름이나 **stick 워크트리를 격리 생성·진입**해 병렬 세션과 충돌하지 않는다. 격리를 명시적으로 원할 때만. 새 규약 영역이면 draft 문서 |
 | 기획·구현 | **개발** | `/beaver:build` | "작업 시작" | 준비 병렬 fan-out → plan의 테스트 케이스를 실제 테스트 파일로 작성 + 규약대로 구현(**테스트 실행 안 함**) → report. 테스트 실행·커밋·전체 회귀 안 함 |
 | 배포 | **배포** | `/beaver:ship` | "커밋하고 배포" | stick 누적분 코드 리뷰(memory·규약·의도·draft 확정, review 문서) → 승인 커밋 → origin을 stick에 편입(worktree 안) → 원래 브랜치 복귀·fast-forward·push → worktree 파기. 충돌 시 인라인 해결 |
 | 검증 (독립) | **테스트** | `/beaver:test` | "전체 테스트 돌려" | **전체 회귀**(`commands.test`)를 현재 체크아웃에서 1회 실행. 독립 — 원격 있는 브랜치(ship 후 원래 브랜치)에서 돌리고, stick worktree 안에선 금지. 통과/실패 보고, 소스 수정 안 함 |
@@ -59,11 +59,11 @@ Claude Code에서:
 ```
 analyze        # 독립 · 프로젝트당 1회 (규약 문서 생성)
 
-plan → build   # 한 세트 · stick 워크트리에서 기능마다 반복 (커밋 안 하고 누적)
-               #   plan: 현재 브랜치 HEAD에서 .claude/worktrees/<stick> 격리 생성 + 세션 진입
-
-fast → build   # plan → build의 워크트리 없는 변형: 전부 현재 브랜치에서
+fast → build   # 기본 세트 · 기능마다 현재 브랜치에서 바로 반복 (커밋 안 하고 누적)
                #   이후 ship은 직접 모드 — 일반 커밋 + 푸쉬 (병합·파기 없음)
+
+plan → build   # 격리 옵트인 · 같은 흐름을 stick 워크트리 안에서
+               #   plan: 현재 브랜치 HEAD에서 .claude/worktrees/<stick> 격리 생성 + 세션 진입
 
 ship           # 한 세트 · 코드리뷰 → 커밋 → origin을 stick에 편입(worktree 안)
                #   → ExitWorktree 복귀 → 원래 브랜치 fast-forward → push → worktree 파기
@@ -75,7 +75,7 @@ test           # 독립 · ship 후 원래 브랜치(원격 있음)에서 /beave
 refactor       # 독립 · 필요 시 (계획서 → 실행, 동작 보존)
 ```
 
-> **브랜치 모델**: 작업하던 브랜치(예 `main`/`develop`)의 현재 HEAD에서 작업 브랜치 `stick/<domain>-<rand6>`를 뻗어 `.claude/worktrees/<stick>`에 격리한다(CC `EnterWorktree`, `worktree.baseRef=head`). ship이 stick을 원래 브랜치로 전진병합·푸쉬한 뒤 worktree와 stick을 파기한다. **stick·worktree는 로컬 전용 — push는 ship이 원래 브랜치로만 한다.** stick 접두사는 `.beaver/config.json` 의 `branch.stick_prefix`(기본 `stick`)로 변경 가능. stick→원래 브랜치 매핑은 `.beaver/.auto-branch-state.json`에 기록된다. 세션마다 다른 워크트리라 **병렬 작업**이 가능하다. `/beaver:fast`는 이 모델을 통째로 건너뛴다 — stick도 worktree도 없이 build·ship이 현재 브랜치에서 바로 동작한다(격리·병렬 세션은 포기).
+> **브랜치 모델** (`/beaver:plan` 격리 옵트인): 작업하던 브랜치(예 `main`/`develop`)의 현재 HEAD에서 작업 브랜치 `stick/<domain>-<rand6>`를 뻗어 `.claude/worktrees/<stick>`에 격리한다(CC `EnterWorktree`, `worktree.baseRef=head`). ship이 stick을 원래 브랜치로 전진병합·푸쉬한 뒤 worktree와 stick을 파기한다. **stick·worktree는 로컬 전용 — push는 ship이 원래 브랜치로만 한다.** stick 접두사는 `.beaver/config.json` 의 `branch.stick_prefix`(기본 `stick`)로 변경 가능. stick→원래 브랜치 매핑은 `.beaver/.auto-branch-state.json`에 기록된다. 세션마다 다른 워크트리라 **병렬 작업**이 가능하다. 이 브랜치 모델은 `/beaver:plan`(**격리 옵트인**)의 것이고, **기본** `/beaver:fast` 흐름은 이를 통째로 건너뛴다 — stick도 worktree도 없이 기획·build·ship이 현재 브랜치에서 바로 동작한다(격리·병렬 세션은 포기).
 
 ---
 
@@ -94,7 +94,7 @@ refactor       # 독립 · 필요 시 (계획서 → 실행, 동작 보존)
 - **산출물** — 루트 `CLAUDE.md`(`templates/CLAUDE.template.md` 구조) + `docs/<topic>.md`(architecture·conventions·data-layer·error-handling·api·testing 중 쓰는 것만) + `.beaver/config.json`(stack·commands·paths·branch). 모든 규칙에 출처(실측 경로 / "표준: 〈프레임워크〉 권장" / "선택: 사용자") 표기. `.gitignore`에 `.beaver/.auto-branch-state.json`도 추가한다(멱등).
 - analyze 자체는 **브랜치를 만들거나 테스트를 실행하지 않는다** — 값을 config에 기록만 한다(stick 워크트리 생성·테스트 실행은 plan/build/ship).
 
-### 📝 `/beaver:plan <기능명>` — 기획 (spec → plan / revision)
+### 📝 `/beaver:plan <기능명>` — 워크트리 격리 기획 (**격리 옵트인**; 기본은 아래 `fast`)
 
 - **전제** — `CLAUDE.md`가 없으면 중단하고 analyze 안내. `.beaver/config.json`·`.beaver/memory/`를 읽는다.
 - **모드 판별** — 같은 기능에 `plan.md`+`report.md`가 이미 있으면 **변경(revision)**, 아니면 **신규(spec→plan)**.
@@ -106,9 +106,9 @@ refactor       # 독립 · 필요 시 (계획서 → 실행, 동작 보존)
 - **draft 규약** — 기획이 `docs/`·`CLAUDE.md`에 없는 **새 규약 영역**(websocket·payment 등)을 도입하면 docs 반영을 제안하고, 승인 시 `<!-- beaver:draft -->` 마커를 단 문서를 만든다(코드는 build가 맞추고, ship이 확정).
 - plan은 **테스트를 실행하지 않는다** — 테스트 케이스를 문서로 설계만 한다.
 
-### ⚡ `/beaver:fast <기능명>` — 워크트리 없는 기획 (현재 브랜치에서 바로)
+### ⚡ `/beaver:fast <기능명>` — 현재 브랜치에서 바로 기획, 워크트리 없음 (**기본 진입점**)
 
-- **기획 흐름은 plan과 동일** — 모드 판별, 심층분석, 1문1답 결정, spec/plan/revision 문서, draft 규약 전부 같다(fast는 plan 스킬을 오버라이드와 함께 수행).
+- **기획 흐름은 plan과 동일** — 모드 판별, 심층분석, 1문1답 결정, spec/plan/revision 문서, draft 규약 전부 같다(fast는 plan 스킬을 오버라이드와 함께 수행). **이것이 기본 기획 진입점이다**; 단계 명시 없는 맨몸 기능 요청은 여기로 온다.
 - **워크트리 없음** — `EnterWorktree` 호출 안 함; stick 브랜치도, `.auto-branch-state.json` 기록도, `worktree.baseRef` 시드도 없다. 체크아웃된 브랜치 필요(detached HEAD면 중단). 모든 문서가 현재 브랜치에 바로 쌓인다.
 - **이후 단계 직접 모드** — build는 메인 체크아웃의 `.beaver/output/`에서 plan을 찾아 그 자리에서 구현; ship은 리뷰 → 커밋 → 현재 브랜치 푸쉬(병합·파기 없음).
 - **Trade-off** — 격리 없음: 같은 체크아웃의 병렬 세션은 충돌한다. 격리·병렬이 중요하면 `/beaver:plan`.
