@@ -12,7 +12,7 @@ Claude Code 플러그인 허브를 통해 설치한다. 설치 후 별도 빌드
 | **Node.js** (PATH에 `node`) | 문서 검증 hook 스크립트(`scripts/on-doc-written.js`)·자동승인 hook 실행. 없으면 hook은 조용히 no-op (문서 구조는 skill이 수동 검사) |
 | **git** | plan/ship의 브랜치·커밋·병합 동작 |
 
-> 대상 프로젝트의 언어(NestJS/Spring/Python/…)와 무관하게 동작한다. 테스트·빌드 커맨드는 `/beaver:analyze` 가 감지해 `.beaver/config.json` 에 기록한다.
+> 대상 프로젝트의 언어·엔진(NestJS/Spring/Python/Unity/Unreal/…)과 무관하게 동작한다. 테스트·빌드 커맨드는 `/beaver:analyze` 가 감지해 `.beaver/config.json` 에 기록한다.
 
 ### ⚠️ 동작·보안 고지
 

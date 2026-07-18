@@ -12,7 +12,7 @@ Install via the Claude Code plugin hub. After installation it works immediately,
 | **Node.js** (`node` on PATH) | Running the document-validation hook script (`scripts/on-doc-written.js`) and the auto-approve hook. Without it the hooks silently no-op (document structure is checked manually by the skill) |
 | **git** | Branch, commit, and merge operations in plan/ship |
 
-> Works regardless of the target project's language (NestJS/Spring/Python/...). Test and build commands are detected by `/beaver:analyze` and recorded in `.beaver/config.json`.
+> Works regardless of the target project's language or engine (NestJS/Spring/Python/Unity/Unreal/...). Test and build commands are detected by `/beaver:analyze` and recorded in `.beaver/config.json`.
 
 ### ⚠️ Behavior and Security Notice
 

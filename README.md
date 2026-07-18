@@ -1,6 +1,6 @@
 # 🦫 Beaver
 
-A Claude Code plugin that first analyzes your codebase to produce a project convention document (`CLAUDE.md`), then uses those conventions as the single source of truth to consistently carry out **analyze → plan → build → ship (merge & push to the original branch) → refactor**. Planning and implementation happen **directly on your current branch by default** (`fast`); an optional **isolated stick worktree** mode (`plan`) enables **parallel work across multiple sessions**. Language-, framework-, and position-agnostic — backend (NestJS · Spring · Python · Go · …), frontend (Next.js · React), and mobile · CLI · library projects alike.
+A Claude Code plugin that first analyzes your codebase to produce a project convention document (`CLAUDE.md`), then uses those conventions as the single source of truth to consistently carry out **analyze → plan → build → ship (merge & push to the original branch) → refactor**. Planning and implementation happen **directly on your current branch by default** (`fast`); an optional **isolated stick worktree** mode (`plan`) enables **parallel work across multiple sessions**. Language-, framework-, and position-agnostic — backend (NestJS · Spring · Python · Go · …), frontend (Next.js · React), and mobile · CLI · library · game-engine (Unity · Unreal · …) projects alike.
 
 <!-- Beaver is not tied to backend stacks. It generalizes across positions via four core terms — LAYER/UNIT (responsibility unit), ENTRY POINT (external reachable surface), DATA/AFFECTED STATE (state read or changed), OUTCOME/INTERFACE CONTRACT (the result an entry point produces). Each term is filled by whatever the project actually uses, derived from code evidence (path:line) and named exactly as the project names it — analyze discovers the real constructs rather than assuming any position-specific vocabulary. -->
 
@@ -12,7 +12,7 @@ A Claude Code plugin that first analyzes your codebase to produce a project conv
 - **Parallel work** — sticks are isolated under `.claude/worktrees/` (per-session cwd switching), so running different features simultaneously across sessions does not conflict.
 - **Regression prevention** — document structure validation + a standalone full regression (`/beaver:test` → `commands.test`) run on a real checkout (the original branch after ship, never the worktree) + inline merge conflict resolution. **Where tests run**: build only **writes** tests — it does not run them; the one and only test execution is `/beaver:test`.
 - **Rule accumulation (memory)** — user corrections during work accumulate in `.beaver/memory/` and are applied with **top priority** (memory > CLAUDE.md > default) in later work. The same correction is never repeated.
-- **Multi-language support** — it detects the stack and records test/build commands in `.beaver/config.json`, so it stays language-agnostic.
+- **Multi-language support** — it detects the stack and records test/build commands in `.beaver/config.json`, so it stays language-agnostic. Stacks outside the common manifests (game engines like Unity/Unreal) are detected the same way, from the project's own engine/CI files.
 - **Review checkpoints** — the planning stage's interactive decision gate, ship's code review, and approval-based commit/merge/push mean a human verifies every step.
 
 ---

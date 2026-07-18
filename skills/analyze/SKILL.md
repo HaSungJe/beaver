@@ -1,6 +1,6 @@
 ---
 name: analyze
-description: Analyzes the codebase to generate/update convention documents (CLAUDE.md + docs/) and configuration (.beaver/config.json). Triggers on "코드베이스 분석", "규약 문서 생성", "beaver 초기화", "analyze codebase", "generate convention docs", "initialize beaver" requests. Language-agnostic (NestJS/Spring/Python, etc.). For existing projects, derives conventions from the code; for new projects, derives them from framework standards. The foundation for all other stages — run once per project, first.
+description: Analyzes the codebase to generate/update convention documents (CLAUDE.md + docs/) and configuration (.beaver/config.json). Triggers on "코드베이스 분석", "규약 문서 생성", "beaver 초기화", "analyze codebase", "generate convention docs", "initialize beaver" requests. Language-agnostic — any stack including game engines (NestJS/Spring/Python/Unity/Unreal, etc.). For existing projects, derives conventions from the code; for new projects, derives them from framework standards. The foundation for all other stages — run once per project, first.
 ---
 
 # analyze — Convention Generation (Code-First, Framework Standards as Fallback)
@@ -25,6 +25,8 @@ Identify the framework, version, core dependencies, and test/build commands from
 | Cargo.toml | `cargo test` / `cargo build` |
 
 Detection is language·framework·position-agnostic — frontend, mobile, CLI, and library projects detect by the same signals (manifest + framework config + entry-surface dir).
+
+**The table is examples, not a whitelist.** A signal outside the table — game/graphics engines or any other stack (Unity `ProjectSettings/ProjectVersion.txt` + `Assets/`, Unreal `*.uproject`, Godot `project.godot`, …) — is detected the same way: identify the stack from the project's own engine/build files, then derive the test/build commands from what the project actually runs (CI steps, Makefile/scripts, or the engine's CLI batch execution — e.g. Unity `-runTests -batchmode`, Unreal Automation) and confirm with the user. Editor-generated artifacts (a Unity project's `.csproj`/`.sln`) never override the engine signal. A stack with no runnable command (editor-only tests, build-only) records only what exists — leave the rest empty rather than inventing one.
 
 Vocabulary below is position-neutral: LAYER/UNIT = responsibility-separation unit; ENTRY POINT = reachable surface; DATA/AFFECTED STATE = state read/changed (persist OR fetch remote data); OUTCOME/INTERFACE CONTRACT = result an entry point produces. For each, derive what this project actually uses from code evidence (path:line) and use the project's own names — do not assume a fixed per-position catalog.
 
