@@ -29,7 +29,9 @@ affected_data: []
      Describe the contract using whatever this project actually uses for this entry point,
      derived from code evidence (path:line), in the project's own naming.
      Keep the Method/Path/Request/Response keys below even for non-HTTP entry points
-     (reuse Method for the entry-point verb/type, Path for the signature). -->
+     (reuse Method for the entry-point verb/type, Path for the signature).
+     For a non-API entry surface (frontend page/route, game scene/event, CLI command, library function)
+     the heading may be renamed to "## Entry Point" / "## 진입점" — the validator accepts these variants. -->
 - Method:
 - Path:
 - Request:

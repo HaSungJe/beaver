@@ -11,3 +11,6 @@ Thumbs.db
 
 # Beaver stick worktrees (CC EnterWorktree)
 .claude/worktrees/
+
+# samples
+samples

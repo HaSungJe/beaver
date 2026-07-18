@@ -6,7 +6,7 @@
 const fs = require('fs');
 
 const DEFAULT_REQUIRED_PLAN = [['## File List', '## 파일 목록'], ['## Test Cases', '## 테스트 케이스']];
-const DEFAULT_REQUIRED_SPEC = [['## Feature Description', '## 기능 설명'], ['## API']];
+const DEFAULT_REQUIRED_SPEC = [['## Feature Description', '## 기능 설명'], ['## API', '## Entry Point', '## 진입점']];
 const DEFAULT_REQUIRED_REVISION = [['## Affected Files', '## 영향받는 파일'], ['## Code Changes', '## 변경 코드']];
 
 function hasSection(content, heading) {
