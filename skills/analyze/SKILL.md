@@ -79,9 +79,16 @@ Structure from `${CLAUDE_PLUGIN_ROOT}/templates/CLAUDE.template.md`; deep rules 
 
 **`auto_approve` (default `true`)** — beaver's PreToolUse hook (`scripts/auto-approve.js`) auto-approves **in-project file edits** (`Write`/`Edit`/`MultiEdit`/`NotebookEdit`) so plan/build/ship do not prompt per edit. **`Bash` is never auto-approved** — tests, `git push`, and edits outside the project still prompt. `"auto_approve": false` restores per-edit confirmation.
 
-**`.gitignore` seed (required, idempotent)** — ensure the line `.beaver/.auto-branch-state.json` exists in the project's `.gitignore` (append if missing; create the file if absent; skip if present).
+**`.gitignore` seed (required, idempotent)** — ensure each of these lines exists in the project's `.gitignore` (append the missing ones; create the file if absent; skip lines already present):
+```
+.beaver/.auto-branch-state.json
+.beaver/config.json
+.claude/worktrees/
+.claude/settings.json
+```
+These are beaver's local bookkeeping/settings (branch state, per-machine commands/paths config, stick worktrees, the plan §0 `worktree.baseRef` seed) — none belong in commits. **`.beaver/output/` and `.beaver/memory/` stay tracked** — documents and memory travel with the branch and merge at ship. gitignore does not affect already-tracked files; if the project intentionally versions `.claude/settings.json`, tell the user instead of forcing it.
 
-**`branch.stick_prefix`** — prefix for stick branches/worktrees (default `stick`). plan creates `<stick_prefix>/<domain>-<rand6>` under `.claude/worktrees/` and records the stick↔origin mapping in `.beaver/.auto-branch-state.json`; isolation, merge, and teardown belong to plan/ship (→ ship §3). analyze only records this value.
+**`branch.stick_prefix`** — prefix for stick branches/worktrees (default `stick`). plan requests `<stick_prefix>/<domain>-<rand6>`; the harness normalizes it (dir `.claude/worktrees/<prefix>+<...>`, branch `worktree-<prefix>+<...>`), and plan records the **actual** branch↔origin mapping in `.beaver/.auto-branch-state.json`; isolation, merge, and teardown belong to plan/ship (→ ship §3). analyze only records this value.
 
 ## 5. Reporting
 Created/merged files, the proportion of rule sources (measured vs. standard), included/omitted sections, and the TODO list.

@@ -10,9 +10,9 @@ build는 **커밋하지 않는다** — 테스트를 작성하고 구현해 stic
 ## 0. stick 워크트리 보장 → memory 우선 + 모드·대상
 
 **어떤 읽기·쓰기보다 먼저 작업 위치 확정** — build는 plan(또는 fast)이 문서를 둔 곳에 누적한다, 틀린 쪽 금지(안 그러면 새 세션이 report를 메인에 흘린다):
-- **stick worktree 안이면**(cwd가 `.claude/worktrees/<stick>` + `.beaver/.auto-branch-state.json`에 키) → 진행(워크트리 모드).
+- **stick worktree 안이면**(cwd가 `.claude/worktrees/` 하위 + `.beaver/.auto-branch-state.json`에 현재 브랜치가 키로 존재) → 진행(워크트리 모드).
 - **아니면, 직접 모드(fast) 먼저 확인**: 메인 체크아웃의 `.beaver/output/`에 대상의 미구현 plan/revision이 있으면(`/beaver:fast`가 생성) 현재 브랜치 **그 자리에서** 작업 — 미커밋 누적; ship이 바로 커밋 + 푸쉬. `git branch --show-current` 비어 있으면 안 됨(detached → 중단).
-- **그래도 아니면** → 메인을 더 스캔하지 말 것. `.claude/worktrees/` 아래에서 대상의 미구현 plan/revision을 담은 stick 워크트리를 찾는다(기능명 매칭, stick 이름이 도메인 보유). 정확히 1개 → `EnterWorktree(name=<stick>)` 재진입; 0개나 2개+ → 중단하고 `/beaver:plan`(또는 `/beaver:fast`) 먼저 돌리거나 대상 명시 안내.
+- **그래도 아니면** → 메인을 더 스캔하지 말 것. `.claude/worktrees/` 아래에서 대상의 미구현 plan/revision을 담은 stick 워크트리를 찾는다(기능명 매칭, stick 이름이 도메인 보유). 정확히 1개 → `EnterWorktree(path=".claude/worktrees/<디렉터리>")` 재진입(`path`가 기존 워크트리 진입; `name`은 새로 만들어버림); 0개나 2개+ → 중단하고 `/beaver:plan`(또는 `/beaver:fast`) 먼저 돌리거나 대상 명시 안내.
 - 같은 기능의 plan이 메인과 stick **양쪽에** 있으면 중단하고 어느 쪽인지 묻는다.
 
 **memory 먼저 읽기**: `.beaver/memory/`(MEMORY.md + 관련 토픽)를 구현 내내 **최우선** 적용(memory > CLAUDE.md > 기본). 사용자가 지속 규칙을 지적하면 확인 후 저장하고 즉시 적용 — 프로토콜 `${CLAUDE_PLUGIN_ROOT}/templates/memory-protocol.md`. CLAUDE.md 규약과 충돌/보강이면 CLAUDE.md 반영도 제안(어느 쪽이든 memory 우선 적용).

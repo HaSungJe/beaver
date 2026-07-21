@@ -34,12 +34,12 @@ Before designing a new function or unit, find its siblings — existing units in
 ## 2. Enter the Worktree FIRST (stick isolation)
 Enter the worktree **before any write** — only the git reads in §0–§1 precede it. Every write below then lands worktree-local and reaches the original branch only when ship merges the stick. The original working directory is left untouched (parallel sessions possible).
 
-- **Already inside a stick worktree** (cwd is `.claude/worktrees/<stick>` and `.beaver/.auto-branch-state.json` has the key) → keep accumulating there.
+- **Already inside a stick worktree** (cwd is under `.claude/worktrees/` and `.beaver/.auto-branch-state.json` has the current branch as a key) → keep accumulating there.
 - Otherwise:
   1. `origin_branch = git branch --show-current` — the target ship will return to. Empty (detached) → stop and direct the user to check out a branch.
-  2. stick name = `<stick_prefix>/<domain>-<rand6>` (default `stick/...`); extract the domain from the feature name/request.
-  3. `EnterWorktree(name=<stick>)` → creates `.claude/worktrees/<stick>` + switches the session cwd (base = current HEAD via §0 baseRef).
-  4. Record `{ "<stick>": "<origin_branch>" }` in `.beaver/.auto-branch-state.json`. If the project's `.gitignore` lacks that line, add it.
+  2. requested name = `<stick_prefix>/<domain>-<rand6>` (default `stick/...`); extract the domain from the feature name/request.
+  3. `EnterWorktree(name=<requested name>)` → creates the worktree + switches the session cwd (base = current HEAD via §0 baseRef). **The harness normalizes names** — dir `.claude/worktrees/<name with / → +>`, branch `worktree-<normalized>` (e.g. `stick/user-a1b2c3` → branch `worktree-stick+user-a1b2c3`); never assume the requested name survived.
+  4. Read the ACTUAL created values after entering: `stick = git branch --show-current` (the real branch), worktree path = the cwd. Record `{ "<stick>": "<origin_branch>" }` in `.beaver/.auto-branch-state.json` keyed by that real branch — ship's merge/delete resolves the branch from this key, so a guessed name breaks ship. If the project's `.gitignore` lacks that line, add it.
 
   The worktree gets no dependency dirs — nothing runs code there; tests execute only at `/beaver:test`, on a real checkout.
 

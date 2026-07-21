@@ -98,7 +98,7 @@ refactor       # 독립 · 필요 시 (계획서 → 실행, 동작 보존)
 
 - **전제** — `CLAUDE.md`가 없으면 중단하고 analyze 안내. `.beaver/config.json`·`.beaver/memory/`를 읽는다.
 - **모드 판별** — 같은 기능에 `plan.md`+`report.md`가 이미 있으면 **변경(revision)**, 아니면 **신규(spec→plan)**.
-- **stick 워크트리 자동 생성** — 현재 stick 워크트리 안이면 누적, 아니면 `origin_branch = git branch --show-current` 기록 후 `EnterWorktree(name=stick/<domain>-<rand6>)`로 현재 HEAD에서 `.claude/worktrees/<stick>` 격리 생성·진입(`worktree.baseRef=head` 자동 설치). `.beaver/.auto-branch-state.json`에 `{stick: origin_branch}` 기록.
+- **stick 워크트리 자동 생성** — 현재 stick 워크트리 안이면 누적, 아니면 `origin_branch = git branch --show-current` 기록 후 `EnterWorktree(name=stick/<domain>-<rand6>)`로 현재 HEAD에서 격리 워크트리 생성·진입(`worktree.baseRef=head` 자동 설치). 하니스가 이름을 정규화한다 — 실제 디렉터리 `.claude/worktrees/stick+<...>`, 실제 브랜치 `worktree-stick+<...>` — 그리고 plan은 **실제** `{stick 브랜치: origin_branch}`를 `.beaver/.auto-branch-state.json`에 기록. 원래 체크아웃은 설계상 자기 브랜치에 그대로 남는다 — Claude 세션만 워크트리로 이동한다.
 - **신규 — 심층분석·대화·spec** — 작성 전 **코드베이스를 병렬 심층분석**(`agents/`의 architecture-mapper·convention-scout·test-pattern-analyzer + 재사용/인접 스캔을 Workflow fan-out으로). 결과로 "기존 패턴 추가 vs 신규 기능"을 판별하고, 신규 특수기능이면 구현 기술검토·제안을 더한다. 근거(경로:라인) 기반 제안 + 설계 접근 2-3안(권장)을 **대화형 1문1답**으로 확정 → `templates/spec.md`로 `.beaver/output/spec/<domain>/<feature>-spec.md` **자동 생성**(기능·API·비즈니스 규칙·참고 + 제안 + 확정된 결정사항·근거). 미답 결정사항 없어야 plan 진행.
 - **신규 — plan** — 미답 있으면 중단. `templates/plan.md`로 `.beaver/output/plan/<domain>/<feature>-plan.md` 작성(파일 목록·레이어별 설계·테스트 케이스·응답 코드 + 사전 구현 필요 항목 `- [ ]`).
 - **변경 — revision** — `templates/revision.md`로 `.beaver/output/revision/<domain>/<feature>-revision-<YYMMDD>-<N>.md`. 원본 spec/plan은 참조만.

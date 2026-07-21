@@ -10,9 +10,9 @@ build **does not commit** — it writes tests and implements, accumulating on th
 ## 0. Ensure Stick Worktree → Memory First + Mode/Target
 
 **Resolve where the work lives before any read or write** — build accumulates where plan (or fast) put the documents, never the wrong place (otherwise a fresh session leaks the report into main):
-- **Inside a stick worktree** (cwd is `.claude/worktrees/<stick>` and `.beaver/.auto-branch-state.json` has the key) → proceed (worktree mode).
+- **Inside a stick worktree** (cwd is under `.claude/worktrees/` and `.beaver/.auto-branch-state.json` has the current branch as a key) → proceed (worktree mode).
 - **Otherwise, check direct mode (fast) first**: if the main checkout's `.beaver/output/` holds an unimplemented plan/revision for the target (created by `/beaver:fast`), work **in place on the current branch** — accumulate uncommitted; ship commits + pushes directly. `git branch --show-current` must be non-empty (detached → stop).
-- **Otherwise** → do not scan main further. Find the stick worktree under `.claude/worktrees/` holding an unimplemented plan/revision for the target (match by feature name; the stick name carries the domain). Exactly one → `EnterWorktree(name=<stick>)` to resume; none or 2+ → stop and tell the user to run `/beaver:plan` (or `/beaver:fast`) first or name the target explicitly.
+- **Otherwise** → do not scan main further. Find the stick worktree under `.claude/worktrees/` holding an unimplemented plan/revision for the target (match by feature name; the stick name carries the domain). Exactly one → `EnterWorktree(path=".claude/worktrees/<dir>")` to resume (`path` enters the existing worktree; `name` would create a fresh one); none or 2+ → stop and tell the user to run `/beaver:plan` (or `/beaver:fast`) first or name the target explicitly.
 - **Both** a main-checkout plan and a matching stick exist → stop and ask which to build.
 
 **Read memory first**: `.beaver/memory/` (MEMORY.md + relevant topics), top priority throughout implementation (memory > CLAUDE.md > defaults). If the user points out a persistent rule, confirm and save it, then apply immediately — protocol `${CLAUDE_PLUGIN_ROOT}/templates/memory-protocol.md`. If it conflicts with or reinforces a CLAUDE.md convention, also propose reflecting it there (apply memory-first either way).

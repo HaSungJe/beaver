@@ -34,12 +34,12 @@ description: 격리 옵트인 — 전용 git worktree(stick 브랜치) 안에서
 ## 2. 워크트리 먼저 진입 (stick 격리)
 **어떤 쓰기보다 먼저** 워크트리에 진입한다 — §0–§1의 git 읽기만 이보다 앞선다. 이후 모든 쓰기는 워크트리 로컬로 들어가고 ship이 stick을 머지할 때만 원본 브랜치에 도달한다. 원래 작업 디렉터리는 그대로 둔다(병렬 세션 가능).
 
-- **이미 stick worktree 안이면**(cwd가 `.claude/worktrees/<stick>` + `.beaver/.auto-branch-state.json`에 해당 키) → 그대로 누적.
+- **이미 stick worktree 안이면**(cwd가 `.claude/worktrees/` 하위 + `.beaver/.auto-branch-state.json`에 현재 브랜치가 키로 존재) → 그대로 누적.
 - 아니면:
   1. `origin_branch = git branch --show-current` — ship이 되돌릴 대상. 빈값(detached)이면 중단하고 브랜치 체크아웃 안내.
-  2. stick 이름 = `<stick_prefix>/<domain>-<rand6>` (기본 `stick/...`). 도메인은 기능명/요청에서 추출.
-  3. `EnterWorktree(name=<stick>)` → `.claude/worktrees/<stick>` 생성 + 세션 cwd 전환(base = §0 baseRef에 따라 현재 HEAD).
-  4. `.beaver/.auto-branch-state.json`에 `{ "<stick>": "<origin_branch>" }` 기록. 프로젝트 `.gitignore`에 그 라인이 없으면 추가.
+  2. 요청 이름 = `<stick_prefix>/<domain>-<rand6>` (기본 `stick/...`). 도메인은 기능명/요청에서 추출.
+  3. `EnterWorktree(name=<요청 이름>)` → 워크트리 생성 + 세션 cwd 전환(base = §0 baseRef에 따라 현재 HEAD). **하니스가 이름을 정규화한다** — 디렉터리는 `.claude/worktrees/<이름의 / → +>`, 브랜치는 `worktree-<정규화된 이름>` (예: `stick/user-a1b2c3` → 브랜치 `worktree-stick+user-a1b2c3`); 요청한 이름이 그대로 남는다고 가정하지 말 것.
+  4. 진입 후 **실제 생성된 값**을 읽는다: `stick = git branch --show-current`(실제 브랜치), 워크트리 경로 = cwd. `.beaver/.auto-branch-state.json`에 `{ "<stick>": "<origin_branch>" }`를 그 실제 브랜치를 키로 기록 — ship의 병합/삭제가 이 키로 브랜치를 찾으므로 추측한 이름을 쓰면 ship이 깨진다. 프로젝트 `.gitignore`에 그 라인이 없으면 추가.
 
   워크트리에 의존성 디렉터리는 채우지 않는다 — 코드를 실행하는 단계가 없고, 테스트는 `/beaver:test`에서만 실제 체크아웃 위에서 돈다.
 
