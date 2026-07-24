@@ -1,6 +1,6 @@
 ---
 name: test
-description: Runs the full regression suite (commands.test) and self-heals on failure — on red it autonomously edits source and re-runs until green, then commits and (with confirmation) pushes. Triggers on "전체 테스트", "회귀 테스트", "테스트 돌려", "test", "run tests", "regression" requests. Standalone — separated out of ship; run it on a real branch that has a remote (e.g. the original branch after ship), never inside a stick worktree.
+description: Runs the full regression suite (commands.test) and self-heals on failure — on red it autonomously edits source and re-runs until green, then commits and (with confirmation) pushes. After green, an AI behavior-risk inspection sweeps the change surface for runtime risks the suite cannot see (silent failures, wiring gaps, contract drift — report-only; full-project sweep on request). Triggers on "전체 테스트", "회귀 테스트", "테스트 돌려", "동작 점검", "test", "run tests", "regression", "behavior inspection" requests. Standalone — separated out of ship; run it on a real branch that has a remote (e.g. the original branch after ship), never inside a stick worktree.
 ---
 
 # test — Full Regression with Self-Heal (standalone)
@@ -50,11 +50,31 @@ Read memory (`.beaver/memory/`) when a failure needs interpreting against projec
 Default 3. Overridable via `.beaver/config.json` (e.g. `healing.maxAttempts`).
 
 ## 2. Green — commit & push
-- **First-pass green** (no source was touched this run): just report that the full regression passed (suite/count summary if available). No commit, no push. Done.
+- **First-pass green** (no source was touched this run): just report that the full regression passed (suite/count summary if available). No commit, no push. Continue to §2.5.
 - **Green after healing** (source was edited):
   - Auto-commit the fix (title = date, bullet body, per the project commit-message convention; no Co-Authored-By).
   - Show the diff and **confirm before push** ("green achieved, here's the diff — push?").
-  - On approval → push to the remote. Done.
+  - On approval → push to the remote. Continue to §2.5.
+
+## 2.5 Behavior-Risk Inspection (after green — AI exploration beyond the suite)
+The suite proves only what it asserts. After green, inspect for **behavior risks the tests cannot see** — code that compiles, lints, and passes yet can misbehave at runtime.
+
+**Scope (default: change surface)** — the files changed by the recent work (e.g. the file set of `git diff origin/<default-branch>...HEAD`, or the latest shipped feature's commits) plus their direct dependents (importers/callers/wiring). Full-project sweep only on explicit request ("전체 점검" / "full inspection"). Size the fan-out to the surface (parallel-first: Workflow parallel / Task distribution / sequential fallback), each agent given an explicit read scope.
+
+**Perspectives** (behavior risk, never style):
+- **Silent failure paths** — swallowed/blanket catches, unawaited async, fire-and-forget without error handling, missing propagation.
+- **Wiring gaps** — a unit written but never registered/subscribed/routed (DI registration, event listener, route, scheduler); test mocks hide these.
+- **Contract drift** — cross-layer mismatches the mock boundary hides: schema vs data shape, env/config referenced but undefined, response-shape inconsistency between sibling entry points.
+- **State & concurrency** — missing transaction boundaries around multi-write flows, non-idempotent retries, check-then-act races.
+- **Boundary behavior** — null/empty/zero paths, pagination limits, timezone/encoding, resource cleanup (connections, handles).
+- **Test blind spots** — behavior the suite exercises only through mocks (docs/testing.md mock-boundary rule): flag it, don't guess.
+
+**Verification discipline** — verify every finding against the actual code before reporting: read the real path, cite evidence (`path:line`), and state the concrete failure scenario (input/state → wrong behavior). If it cannot misbehave at runtime, it is not a finding.
+
+**Output & handling (report-only — never auto-fix)** — the self-heal loop fixes red tests only; inspection findings are hypotheses for the human:
+- Write `.beaver/output/inspection/<YYMMDD>-inspection.md` (severity-ranked: risk / evidence path:line / failure scenario / suggested handling) and summarize in chat.
+- Fixes route through `/beaver:fast` (or plan) → `build`; a trivial fix may be applied inline only with explicit user approval, then re-run §1.
+- Zero findings → say so explicitly, with the scope inspected — honesty over invented findings.
 
 ## 3. Red — report
 When the loop gives up (GUARD a/b) or the human aborts: report exactly which tests still fail (quote the runner output) and what was attempted. The fallback fix path remains `/beaver:plan`→`/beaver:build` on the offending feature, then ship and re-run `/beaver:test`.
